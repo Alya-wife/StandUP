@@ -6,8 +6,8 @@
     --cyan: #06b6d4;
     --emerald: #10b981;
     --red: #ef4444;
-    --card-w: 68px;
-    --card-h: 94px;
+    --card-w: 80px;
+    --card-h: 110px;
 
     /* Emil Kowalski Animation & Motion Design Tokens */
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -344,16 +344,16 @@ body {
 
 /* 3x3 Master CSS Grid Playmat */
 .mat-board-grid {
-    width: 880px;
-    height: 480px;
+    width: 960px;
+    height: 525px;
     background: #181514;
     background-image: radial-gradient(circle at 50% 50%, #26211e 0%, #141211 85%);
     border: 2px solid #3d352e;
     border-radius: 10px;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.9), inset 0 0 35px rgba(0, 0, 0, 0.6);
     display: grid;
-    grid-template-columns: 160px 1fr 140px;
-    grid-template-rows: 200px 56px 200px;
+    grid-template-columns: 180px 1fr 160px;
+    grid-template-rows: 218px 58px 218px;
     padding: 6px 12px;
     position: relative;
 }
@@ -740,7 +740,7 @@ body {
 
 /* Player Hand Tray (Bottom) */
 .player-hand-tray {
-    height: 125px;
+    height: 148px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -751,18 +751,18 @@ body {
     flex-shrink: 0;
     position: relative;
     z-index: 50;
-    padding: 2px 10px 6px 10px;
+    padding: 2px 10px 8px 10px;
     overflow: visible !important;
 }
 .player-hand-label {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 800;
     color: #94a3b8;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 .player-hand-cards {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: flex-end;
     justify-content: center;
     overflow: visible !important;
@@ -779,14 +779,117 @@ body {
     height: 0 !important;
 }
 .player-hand-cards .vg-card {
+    width: 88px;
+    height: 122px;
     transform-origin: bottom center;
     transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease;
     flex-shrink: 0;
+    cursor: grab;
+}
+.player-hand-cards .vg-card:active {
+    cursor: grabbing;
 }
 .player-hand-cards .vg-card:hover {
-    transform: translateY(-20px) scale(1.22) !important;
+    transform: translateY(-24px) scale(1.22) !important;
     z-index: 99 !important;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.95), 0 0 16px rgba(6, 182, 212, 0.8) !important;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.95), 0 0 18px rgba(6, 182, 212, 0.85) !important;
+}
+
+/* Drag & Drop Interactions */
+.vg-card.is-dragging {
+    opacity: 0.45;
+    transform: scale(0.95);
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.9) !important;
+}
+.circle-slot.drag-over {
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 22px rgba(6, 182, 212, 0.9) !important;
+    transform: scale(1.06);
+}
+.guardian-circle-center.drag-over {
+    box-shadow: 0 0 24px #10b981 !important;
+    transform: scale(1.12);
+}
+.order-slot-box.drag-over {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.9) !important;
+    transform: scale(1.1);
+}
+
+/* Energy Crest EB(7) Button */
+.btn-eb7 {
+    margin-top: 3px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000;
+    font-size: 8px;
+    font-weight: 900;
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid #fbbf24;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+    animation: pulse-gold 1.5s infinite;
+    letter-spacing: 0.3px;
+}
+.btn-eb7:hover {
+    transform: scale(1.08);
+    background: #fbbf24;
+}
+
+/* Order Zone Thumbnail Card */
+.order-cards-stack {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+.order-card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+    border: 1px solid #f59e0b;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+.order-card-thumb:hover {
+    transform: scale(1.1);
+}
+
+/* Heal Selection Face-Up / Face-Down Badges */
+.heal-pick-item {
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.heal-pick-item:hover {
+    transform: translateY(-4px) scale(1.05);
+}
+.heal-status-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    font-size: 8px;
+    font-weight: 800;
+    text-align: center;
+    padding: 2px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+}
+.heal-status-badge.face-down {
+    background: rgba(0, 0, 0, 0.92);
+    color: #f59e0b;
+    border: 1px solid #f59e0b;
+}
+.heal-status-badge.face-up {
+    background: rgba(0, 0, 0, 0.92);
+    color: #10b981;
+    border: 1px solid #10b981;
 }
 
 /* ---------------- RIGHT SIDEBAR: CARD INSPECTOR (MATCHING IMAGE #2) ---------------- */

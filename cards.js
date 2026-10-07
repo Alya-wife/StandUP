@@ -153,8 +153,8 @@ const DEFAULT_CARD_CATALOG = [
     createCard('D-LTD01/010', 'Spiritual King of Determination, Olbaria', 'Cray Elemental', 0, 5000, 50000, 1, TRIGGER_TYPE.OVER, [SKILL_TYPE.BOOST], 'img/Card/d_ltd01_010.webp',
         '[Over Trigger] (Max 1 in deck) When revealed, remove this card from game, draw 1, choose a unit to get [Power] +100,000,000! Additional: Choose one of your units, and it gets [Power] +100,000,000 until end of turn!'),
 
-    createCard('DZSS06', 'Elementaria Sanctitude', 'Cray Elemental', 1, 0, 0, 1, TRIGGER_TYPE.NONE, [], 'img/Card/dzss06.webp',
-        '[Blitz Order / Sentinel] (Kartu ini dianggap sebagai semua nation).\n[Cost: Discard 1 kartu], pilih 1 unitmu yang sedang diserang, dan unit tersebut tidak dapat terkena hit hingga akhir battle ini.'),
+    createCard('DZSS06', 'Elementaria Sanctitude', 'Cray Elemental', 1, 0, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.SENTINEL], 'img/Card/dzss06.webp',
+        '[Blitz Order / Sentinel] (Kartu ini dianggap sebagai semua nation).\n[Cost: Discard 1 kartu], pilih 1 unitmu yang sedang diserang, dan unit tersebut tidak dapat terkena hit hingga akhir battle ini.', false, '', CARD_CATEGORY.BLITZ_ORDER),
 
     // Keter Sanctuary Cards (Bastion Line)
     createCard('ks_001', 'Rook', 'Keter Sanctuary', 0, 6000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], '',

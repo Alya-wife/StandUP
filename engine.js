@@ -103,6 +103,7 @@ class VanguardEngine {
             mulliganDone: false,
             turnCount: 0,
             energy: 0,
+            energyGeneratorUsedThisTurn: false,
             crestZone: null,
             orderZone: [],
             personaRideActive: false,
@@ -270,6 +271,7 @@ class VanguardEngine {
         this.activePlayer = playerNum;
         const p = this.getActivePlayer();
         p.hasRiddenThisTurn = false;
+        p.energyGeneratorUsedThisTurn = false;
         p.turnCount = (p.turnCount || 0) + 1;
 
         this.log(`--- TURN ${this.turn} : ${p.name}'s Turn ---`, "turn");
@@ -421,6 +423,29 @@ class VanguardEngine {
         if (!this.canEnergyBlast(player, amount)) return false;
         player.energy = (player.energy || 0) - amount;
         this.log(`[Energy-Blast] ${player.name} membayar EB(${amount})! Sisa Energy: [${player.energy}/10].`, "action");
+        this.notify('STATE_CHANGE');
+        return true;
+    }
+
+    // Energy Generator Crest: [ACT](Crest)[1/Turn]: [Cost: Energy-Blast (7)] -> Draw 1
+    activateEnergyGeneratorEB7(playerNum) {
+        const p = playerNum === 1 ? this.p1 : this.p2;
+        if (this.phase !== 'MAIN_PHASE' || this.activePlayer !== p.id) {
+            this.log("Energy Blast (7) hanya dapat digunakan saat Main Phase giliranmu!", "warn");
+            return false;
+        }
+        if (p.energyGeneratorUsedThisTurn) {
+            this.log("[Energy Generator] Kemampuan EB(7) hanya dapat digunakan 1 kali per giliran (1/Turn)!", "warn");
+            return false;
+        }
+        if (!this.canEnergyBlast(p, 7)) {
+            this.log(`[Energy Generator] Energy tidak cukup untuk EB(7)! (Energy saat ini: ${p.energy || 0}/10)`, "warn");
+            return false;
+        }
+        this.payEnergyBlast(p, 7);
+        p.energyGeneratorUsedThisTurn = true;
+        const drawn = this.drawCard(p, 'energy_generator');
+        this.log(`[Energy Generator] [ACT] ${p.name} membayar [EB 7] -> Draw 1 kartu ("${drawn ? drawn.name : ''}")!`, "highlight");
         this.notify('STATE_CHANGE');
         return true;
     }
@@ -894,6 +919,18 @@ class VanguardEngine {
         if (!card) return false;
 
         opp.hand.splice(handIndex, 1);
+
+        const isBlitzOrder = (card.cardType === 'Blitz Order' || (card.ability && card.ability.includes('[Blitz Order]')) || (card.name && card.name.toLowerCase().includes('elementaria')));
+        if (isBlitzOrder) {
+            if (!opp.orderZone) opp.orderZone = [];
+            opp.orderZone.push(card);
+            this.combat.isSentinelGuarded = true;
+            this.log(`[Blitz Order] ${opp.name} memainkan "${card.name}" ke Order Zone! Unit yang diserang tidak dapat terkena hit pada pertarungan ini!`, "highlight");
+            this.notify('BLITZ_ORDER_PLAYED', { card, player: opp });
+            this.notify('STATE_CHANGE');
+            return true;
+        }
+
         opp.guardians.push(card);
         this.combat.guardians.push(card);
         const shieldVal = card.shield || 0;
@@ -1025,8 +1062,11 @@ class VanguardEngine {
             idx = player.damage.length - 1;
         }
         const [healedCard] = player.damage.splice(idx, 1);
+        const wasFaceDown = !!healedCard.faceDown;
+        healedCard.faceDown = false;
         player.drop.push(healedCard);
-        this.log(`[Heal Trigger] ${player.name} berhasil meng-heal "${healedCard.name}" dari Damage Zone ke Drop Zone!`, "trigger");
+        this.log(`[Heal Trigger] ${player.name} berhasil meng-heal "${healedCard.name}" (${wasFaceDown ? 'Face-Down / CB' : 'Face-Up'}) dari Damage Zone ke Drop Zone!`, "trigger");
+        this.notify('HEAL_RESOLVED', { player, card: healedCard, damageIndex: idx });
         this.notify('STATE_CHANGE');
         return healedCard;
     }
@@ -1055,9 +1095,7 @@ class VanguardEngine {
                 {
                     const opp = player === this.p1 ? this.p2 : this.p1;
                     const effectiveDamage = player.damage.length + (isDamageCheck ? 1 : 0);
-                    if (this.canHeal(player, isDamageCheck)) {
-                        this.healDamageCard(player, null);
-                    } else {
+                    if (!this.canHeal(player, isDamageCheck)) {
                         this.log(`[Heal Trigger] Damage ${player.name} (${effectiveDamage}) < Lawan (${opp.damage.length}): Efek Heal tidak aktif, hanya mendapatkan Power +10,000.`, "info");
                     }
                 }
@@ -1178,6 +1216,20 @@ class VanguardEngine {
         if (this.combat && this.combat.guardians.length > 0) {
             opp.drop.push(...this.combat.guardians);
             opp.guardians = [];
+        }
+
+        if (opp.orderZone && opp.orderZone.length > 0) {
+            const remaining = [];
+            opp.orderZone.forEach(c => {
+                const isBlitz = (c.cardType === 'Blitz Order' || (c.ability && c.ability.includes('[Blitz Order]')) || (c.name && c.name.toLowerCase().includes('elementaria')));
+                if (isBlitz) {
+                    opp.drop.push(c);
+                    this.log(`[Order Zone] Blitz Order "${c.name}" dipindahkan ke Drop Zone setelah pertempuran selesai.`, "info");
+                } else {
+                    remaining.push(c);
+                }
+            });
+            opp.orderZone = remaining;
         }
 
         this.combat = null;

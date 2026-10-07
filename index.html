@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=48">
+    <link rel="stylesheet" href="style.css?v=49">
 </head>
 <body>
 
@@ -182,6 +182,7 @@
                                     <span class="energy-bolt" style="font-size:9.5px;font-weight:900;">EC</span>
                                     <span class="energy-val" id="p2_energyCount">0</span><span class="energy-max">/10</span>
                                 </div>
+                                <button class="btn-eb7" id="p2_btnEB7" style="display:none;" title="Energy Blast 7: Draw 1 Kartu">EB(7) Draw</button>
                             </div>
                             <!-- Order Zone on Right of Energy Counter -->
                             <div class="order-slot-box" id="p2_orderSlot" title="Order Zone">
@@ -270,6 +271,7 @@
                                     <span class="energy-bolt" style="font-size:9.5px;font-weight:900;">EC</span>
                                     <span class="energy-val" id="p1_energyCount">0</span><span class="energy-max">/10</span>
                                 </div>
+                                <button class="btn-eb7" id="p1_btnEB7" style="display:none;" title="Energy Blast 7: Draw 1 Kartu">EB(7) Draw</button>
                             </div>
                             <!-- Order Zone on Right of Energy Counter -->
                             <div class="order-slot-box" id="p1_orderSlot" title="Order Zone">
@@ -833,15 +835,15 @@
     <div id="triggerSplash" class="trigger-splash" style="display:none;"></div>
 
     <!-- WebRTC PeerJS for Serverless Online Multiplayer -->
-    <script src="peerjs.min.js?v=48"></script>
+    <script src="peerjs.min.js?v=49"></script>
     <script>
         if (typeof Peer === 'undefined') {
             document.write('<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"><\/script>');
         }
     </script>
-    <script src="cards.js?v=48"></script>
-    <script src="engine.js?v=48"></script>
-    <script src="network.js?v=48"></script>
-    <script src="ui.js?v=48"></script>
+    <script src="cards.js?v=49"></script>
+    <script src="engine.js?v=49"></script>
+    <script src="network.js?v=49"></script>
+    <script src="ui.js?v=49"></script>
 </body>
 </html>

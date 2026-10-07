@@ -88,6 +88,48 @@ class VanguardUI {
         safeClick('btnRestartMatch', () => this.showTestRoomDeckSelectModal(true));
         safeClick('p1_dropSlot', () => this.showDropZoneModal(1));
         safeClick('p2_dropSlot', () => this.showDropZoneModal(2));
+
+        const handleDragGuard = (e) => {
+            e.preventDefault();
+            if (this.draggedHandCard && this.engine.phase === 'GUARD_STEP') {
+                const { playerNum: fromPlayer, handIndex } = this.draggedHandCard;
+                this.draggedHandCard = null;
+                const isOnline = (this.network && this.network.isOnline);
+                if (isOnline && this.network.myPlayerId !== fromPlayer) return;
+                if (fromPlayer === this.engine.getOpponentPlayer().id) {
+                    if (!this.dispatchAction('CALL_GUARDIAN', { handIndex })) {
+                        this.engine.callGuardian(handIndex);
+                    }
+                    this.renderAll();
+                }
+            }
+        };
+
+        const setupDropTarget = (elId) => {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.ondragover = (e) => {
+                if (this.engine.phase === 'GUARD_STEP') {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                }
+            };
+            el.ondragenter = (e) => {
+                if (this.engine.phase === 'GUARD_STEP') {
+                    e.preventDefault();
+                    el.classList.add('drag-over');
+                }
+            };
+            el.ondragleave = () => el.classList.remove('drag-over');
+            el.ondrop = (e) => {
+                el.classList.remove('drag-over');
+                handleDragGuard(e);
+            };
+        };
+
+        setupDropTarget('circleGC');
+        setupDropTarget('p1_orderSlot');
+        setupDropTarget('p2_orderSlot');
     }
 
     showView(viewId) {
@@ -230,6 +272,16 @@ class VanguardUI {
             this.animateCardDraw(payload.player.id, payload.card);
         } else if (eventType === 'TRIGGER_RESOLVED') {
             this.showSplash(`${payload.trigger} TRIGGER!`, "pink");
+        } else if (eventType === 'HEAL_RESOLVED') {
+            this.showSplash(`HEAL 1 DAMAGE! (${payload.card ? payload.card.name : ''})`, "green");
+            if (this.healSelectionPendingCallback) {
+                const cb = this.healSelectionPendingCallback;
+                this.healSelectionPendingCallback = null;
+                this.elModal.style.display = 'none';
+                cb();
+            }
+        } else if (eventType === 'BLITZ_ORDER_PLAYED') {
+            this.showSplash(`BLITZ ORDER: ${payload.card ? payload.card.name : ''}!`, "cyan");
         } else if (eventType === 'BATTLE_CLOSED' || eventType === 'END_PHASE') {
             const hud = document.getElementById('inGameCardRevealHud');
             if (hud) hud.style.display = 'none';
@@ -520,6 +572,17 @@ class VanguardUI {
 
             pActive.hand.forEach((card, idx) => {
                 const cardEl = this.createCardElement(card, false);
+                cardEl.draggable = true;
+                cardEl.ondragstart = (e) => {
+                    this.draggedHandCard = { playerNum: pActive.id, handIndex: idx, card };
+                    e.dataTransfer.setData('text/plain', String(idx));
+                    e.dataTransfer.effectAllowed = 'move';
+                    cardEl.classList.add('is-dragging');
+                };
+                cardEl.ondragend = () => {
+                    cardEl.classList.remove('is-dragging');
+                    document.querySelectorAll('.circle-slot, .guardian-circle-center, .order-slot-box, .mat-board-grid').forEach(el => el.classList.remove('drag-over'));
+                };
                 if (idx > 0 && overlapMargin > 0) {
                     cardEl.style.marginLeft = `-${overlapMargin}px`;
                 }
@@ -722,8 +785,96 @@ class VanguardUI {
                 }
             }
 
+            // Circle Drag & Drop target
+            el.ondragover = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            };
+            el.ondragenter = (e) => {
+                e.preventDefault();
+                el.classList.add('drag-over');
+            };
+            el.ondragleave = () => {
+                el.classList.remove('drag-over');
+            };
+            el.ondrop = (e) => {
+                e.preventDefault();
+                el.classList.remove('drag-over');
+                this.handleCardDropOnCircle(playerNum, key);
+            };
+
             el.onclick = () => this.onCircleClick(playerNum, key);
         });
+    }
+
+    handleCardDropOnCircle(playerNum, circleKey) {
+        if (!this.draggedHandCard) return;
+        const { playerNum: fromPlayer, handIndex, card } = this.draggedHandCard;
+        this.draggedHandCard = null;
+
+        if (this.network && this.network.isOnline && this.network.myPlayerId !== fromPlayer) {
+            return;
+        }
+
+        // 1. Dropping on Vanguard Circle (Ride / Persona Ride)
+        if (circleKey === 'vc' && playerNum === fromPlayer) {
+            if (this.engine.phase === 'RIDE_PHASE' || this.engine.phase === 'MAIN_PHASE') {
+                this.promptRideConfirmation(fromPlayer, handIndex);
+                return;
+            }
+        }
+
+        // 2. Dropping on Rear-guard Circle (Call Unit)
+        if (circleKey.startsWith('rc_') && playerNum === fromPlayer) {
+            if (this.engine.phase === 'MAIN_PHASE' && this.engine.activePlayer === fromPlayer) {
+                if (!this.dispatchAction('CALL_UNIT', { handIndex, circleKey })) {
+                    this.engine.callUnit(handIndex, circleKey);
+                }
+                this.selectedHandIndex = null;
+                this.selectedMoveSourceCircle = null;
+                this.renderAll();
+                return;
+            }
+        }
+
+        // 3. Dropping on any field circle during Guard Step (Guard with card)
+        if (this.engine.phase === 'GUARD_STEP' && fromPlayer === this.engine.getOpponentPlayer().id) {
+            if (!this.dispatchAction('CALL_GUARDIAN', { handIndex })) {
+                this.engine.callGuardian(handIndex);
+            }
+            this.renderAll();
+            return;
+        }
+    }
+
+    triggerEnergyGeneratorEB7(playerNum) {
+        const p = playerNum === 1 ? this.engine.p1 : this.engine.p2;
+        const isOnline = (this.network && this.network.isOnline);
+        if (isOnline && this.network.myPlayerId !== p.id) {
+            return;
+        }
+
+        if (this.engine.phase !== 'MAIN_PHASE' || this.engine.activePlayer !== p.id) {
+            this.showSplash("EB(7) hanya dapat diaktifkan pada Main Phase giliranmu!", "cyan");
+            return;
+        }
+
+        if (p.energyGeneratorUsedThisTurn) {
+            this.showSplash("EB(7) hanya dapat digunakan 1x per giliran!", "cyan");
+            return;
+        }
+
+        if ((p.energy || 0) < 7) {
+            this.showSplash(`Energy tidak cukup untuk EB(7)! (Sisa: ${p.energy || 0}/10)`, "cyan");
+            return;
+        }
+
+        if (isOnline && !this.network.isHost) {
+            this.dispatchAction('EB7_DRAW');
+        } else {
+            this.engine.activateEnergyGeneratorEB7(p.id);
+        }
+        this.renderAll();
     }
 
     renderZones() {
@@ -739,6 +890,65 @@ class VanguardUI {
 
             const numEl = document.getElementById(`${prefix}damageNum`);
             if (numEl) numEl.textContent = p.damage.length;
+
+            // Energy Counter
+            const energyEl = document.getElementById(`${prefix}energyCount`);
+            if (energyEl) energyEl.textContent = (p.energy !== undefined ? p.energy : 0);
+
+            // EB(7) Draw Button & Crest Slot Activation
+            const btnEB7 = document.getElementById(`${prefix}btnEB7`);
+            const isOnline = (this.network && this.network.isOnline);
+            const isMyTurn = (!isOnline) || (this.network.myPlayerId === p.id);
+            const canUseEB7 = isMyTurn && (this.engine.phase === 'MAIN_PHASE') && (this.engine.activePlayer === p.id) && ((p.energy || 0) >= 7) && (!p.energyGeneratorUsedThisTurn);
+
+            if (btnEB7) {
+                if (canUseEB7) {
+                    btnEB7.style.display = 'block';
+                    btnEB7.onclick = (e) => {
+                        e.stopPropagation();
+                        this.triggerEnergyGeneratorEB7(pNum);
+                    };
+                } else {
+                    btnEB7.style.display = 'none';
+                }
+            }
+
+            const crestSlot = document.getElementById(`${prefix}crestSlot`);
+            if (crestSlot) {
+                crestSlot.onclick = () => {
+                    if (canUseEB7) {
+                        this.triggerEnergyGeneratorEB7(pNum);
+                    } else {
+                        this.inspectCard({
+                            id: 'dz_005',
+                            name: 'Energy Generator',
+                            grade: 0,
+                            power: 0,
+                            shield: 0,
+                            cardType: 'Crest',
+                            image: 'img/Card/dztd01_005.webp',
+                            ability: `[Crest] Energy Counter: [${p.energy || 0}/10].\n• At the beginning of your ride phase, Energy Charge (3).\n• [ACT][1/Turn]: [Cost: Energy-Blast 7], Draw 1 kartu.`
+                        });
+                    }
+                };
+            }
+
+            // Order Zone Stack
+            const orderStack = document.getElementById(`${prefix}orderCards`);
+            if (orderStack) {
+                orderStack.innerHTML = '';
+                if (p.orderZone && p.orderZone.length > 0) {
+                    p.orderZone.forEach(c => {
+                        const oImg = document.createElement('img');
+                        oImg.className = 'order-card-thumb';
+                        oImg.src = c.image || 'img/Card/dztd01_002.webp';
+                        oImg.alt = c.name;
+                        oImg.title = `${c.name} [${c.cardType || 'Order'}] (Order Zone)`;
+                        oImg.onmouseenter = () => this.inspectCard(c);
+                        orderStack.appendChild(oImg);
+                    });
+                }
+            }
 
             // Drop Zone preview & count
             const dropEmpty = document.getElementById(`${prefix}dropEmpty`);
@@ -842,6 +1052,25 @@ class VanguardUI {
                 `;
             }
 
+            const isOnline = (this.network && this.network.isOnline);
+            const isMyTurnToGuard = !isOnline || (this.network.myPlayerId === opp.id);
+
+            let actionsHtml = '';
+            if (isMyTurnToGuard) {
+                actionsHtml = `
+                    <div class="combat-guard-actions">
+                        <button class="btn btn-red" id="btnCombatNoGuard" style="padding:4px 12px;font-size:11px;font-weight:800;">No Guard</button>
+                        <button class="btn btn-emerald" id="btnCombatFinishGuard" style="padding:4px 12px;font-size:11px;font-weight:800;">Selesai Guard</button>
+                    </div>
+                `;
+            } else {
+                actionsHtml = `
+                    <div class="combat-guard-actions" style="font-size:11.5px;color:#38bdf8;font-weight:700;">
+                        <span class="inline-spinner"></span> Menunggu ${opp.name} (Defender) melakukan Guard...
+                    </div>
+                `;
+            }
+
             banner.innerHTML = `
                 <div class="combat-guard-status">
                     <span class="combat-atk-tag">ATK: [${activeP.name}] ${atk.name} (${stats.atkPower.toLocaleString()})</span>
@@ -850,16 +1079,23 @@ class VanguardUI {
                     <span class="pass-badge ${stats.passClass}">${stats.passLabel}</span>
                     <span style="color:#94a3b8;font-size:10px;">(Shield: <b style="color:#10b981;">+${stats.totalShield.toLocaleString()}</b>)</span>
                 </div>
-                <div class="combat-guard-actions">
-                    <button class="btn btn-red" id="btnCombatNoGuard" style="padding:2px 8px;font-size:10px;">No Guard</button>
-                    <button class="btn btn-emerald" id="btnCombatFinishGuard" style="padding:2px 8px;font-size:10px;">Selesai Guard</button>
-                </div>
+                ${guardiansHtml}
+                ${actionsHtml}
             `;
 
-            const btnNo = document.getElementById('btnCombatNoGuard');
-            if (btnNo) btnNo.onclick = () => this.engine.finishGuardStep();
-            const btnFin = document.getElementById('btnCombatFinishGuard');
-            if (btnFin) btnFin.onclick = () => this.engine.finishGuardStep();
+            if (isMyTurnToGuard) {
+                const finishGuardFn = () => {
+                    if (isOnline && !this.network.isHost) {
+                        this.dispatchAction('FINISH_GUARD');
+                    } else {
+                        this.engine.finishGuardStep();
+                    }
+                };
+                const btnNo = document.getElementById('btnCombatNoGuard');
+                if (btnNo) btnNo.onclick = finishGuardFn;
+                const btnFin = document.getElementById('btnCombatFinishGuard');
+                if (btnFin) btnFin.onclick = finishGuardFn;
+            }
         } else {
             banner.style.display = 'none';
         }
@@ -1413,8 +1649,18 @@ class VanguardUI {
             btnAction.className = 'btn btn-cyan';
         } else if (this.engine.phase === 'GUARD_STEP') {
             btnAction.style.display = 'inline-flex';
-            btnAction.textContent = 'Pass / Finish Guard';
-            btnAction.className = 'btn btn-primary';
+            const isOnline = (this.network && this.network.isOnline);
+            const defender = this.engine.getOpponentPlayer();
+            const isMyTurnToGuard = !isOnline || (this.network.myPlayerId === defender.id);
+            if (!isMyTurnToGuard) {
+                btnAction.disabled = true;
+                btnAction.textContent = 'Menunggu Guard Lawan...';
+                btnAction.className = 'btn';
+            } else {
+                btnAction.disabled = false;
+                btnAction.textContent = 'Pass / Finish Guard';
+                btnAction.className = 'btn btn-primary';
+            }
         } else {
             btnAction.style.display = 'none';
         }
@@ -1691,6 +1937,20 @@ class VanguardUI {
     }
 
     handleActionPhaseBtn() {
+        if (this.engine.phase === 'GUARD_STEP') {
+            const isOnline = (this.network && this.network.isOnline);
+            const defender = this.engine.getOpponentPlayer();
+            const isMyTurnToGuard = !isOnline || (this.network.myPlayerId === defender.id);
+            if (!isMyTurnToGuard) return;
+
+            if (isOnline && !this.network.isHost) {
+                this.dispatchAction('FINISH_GUARD');
+            } else {
+                this.engine.finishGuardStep();
+            }
+            return;
+        }
+
         if (this.dispatchAction('PHASE_BUTTON')) {
             return;
         }
@@ -1709,8 +1969,6 @@ class VanguardUI {
             } else {
                 this.engine.proceedToBattlePhase();
             }
-        } else if (this.engine.phase === 'GUARD_STEP') {
-            this.engine.finishGuardStep();
         }
     }
 
@@ -2341,14 +2599,17 @@ class VanguardUI {
             cardEl.style.border = '2px solid #10b981';
             cardEl.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
             cardEl.title = `Klik untuk Heal: ${card.name}`;
+            cardEl.style.position = 'relative';
 
+            const badge = document.createElement('div');
             if (card.faceDown) {
-                const badge = document.createElement('div');
-                badge.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,0.85);color:#f59e0b;font-size:8.5px;font-weight:800;text-align:center;padding:2px;border-radius:3px;border:1px solid #f59e0b;';
-                badge.textContent = 'FACE-DOWN';
-                cardEl.style.position = 'relative';
-                cardEl.appendChild(badge);
+                badge.className = 'heal-status-badge face-down';
+                badge.textContent = 'CB (FACE-DOWN)';
+            } else {
+                badge.className = 'heal-status-badge face-up';
+                badge.textContent = 'ACTIVE (FACE-UP)';
             }
+            cardEl.appendChild(badge);
 
             cardEl.onmouseenter = () => this.inspectCard(card);
             cardEl.onclick = () => {
@@ -2358,7 +2619,11 @@ class VanguardUI {
                 }
                 this.showSplash(`HEAL 1 DAMAGE! (${card.name})`, "green");
                 this.renderAll();
-                if (onFinished) onFinished();
+                if (onFinished) {
+                    const cb = onFinished;
+                    this.healSelectionPendingCallback = null;
+                    cb();
+                }
             };
             row.appendChild(cardEl);
         });
@@ -3754,7 +4019,16 @@ class VanguardUI {
                 this.engine.applyTriggerCritical(this.engine.p2, payload.circleKey, payload.amount || 1);
                 break;
             case 'HEAL_CARD_SELECTION':
+                this.elModal.style.display = 'none';
                 this.engine.healDamageCard(this.engine.p2, payload.damageIndex);
+                if (this.healSelectionPendingCallback) {
+                    const cb = this.healSelectionPendingCallback;
+                    this.healSelectionPendingCallback = null;
+                    cb();
+                }
+                break;
+            case 'EB7_DRAW':
+                this.engine.activateEnergyGeneratorEB7(2);
                 break;
         }
     }
