@@ -963,7 +963,9 @@ class VanguardEngine {
             total: this.combat.driveCount,
             isTrigger: driveCard.trigger !== TRIGGER_TYPE.NONE,
             triggerType: driveCard.trigger,
-            player: p
+            player: p,
+            isDriveCheck: true,
+            isDamageCheck: false
         });
     }
 
@@ -1008,7 +1010,28 @@ class VanguardEngine {
         return true;
     }
 
-    applyTriggerAdditional(player, triggerType) {
+    canHeal(player, isDamageCheck = false) {
+        if (!player || player.damage.length === 0) return false;
+        const opp = player === this.p1 ? this.p2 : this.p1;
+        // On damage check, the card in triggerZone counts towards effective damage
+        const effectiveDamage = player.damage.length + (isDamageCheck ? 1 : 0);
+        return effectiveDamage >= opp.damage.length;
+    }
+
+    healDamageCard(player, damageCardIndex = null) {
+        if (!player || player.damage.length === 0) return null;
+        let idx = damageCardIndex;
+        if (idx === null || idx === undefined || idx < 0 || idx >= player.damage.length) {
+            idx = player.damage.length - 1;
+        }
+        const [healedCard] = player.damage.splice(idx, 1);
+        player.drop.push(healedCard);
+        this.log(`[Heal Trigger] ${player.name} berhasil meng-heal "${healedCard.name}" dari Damage Zone ke Drop Zone!`, "trigger");
+        this.notify('STATE_CHANGE');
+        return healedCard;
+    }
+
+    applyTriggerAdditional(player, triggerType, isDamageCheck = false) {
         switch (triggerType) {
             case TRIGGER_TYPE.DRAW:
                 {
@@ -1029,13 +1052,14 @@ class VanguardEngine {
                 break;
 
             case TRIGGER_TYPE.HEAL:
-                const opp = player === this.p1 ? this.p2 : this.p1;
-                if (player.damage.length >= opp.damage.length && player.damage.length > 0) {
-                    const healedCard = player.damage.pop();
-                    player.drop.push(healedCard);
-                    this.log(`[Heal Trigger] Damage ${player.name} (${player.damage.length + 1}) >= Lawan (${opp.damage.length}): Berhasil Heal 1 kartu ("${healedCard.name}") ke Drop Zone!`, "trigger");
-                } else {
-                    this.log(`[Heal Trigger] Damage ${player.name} (${player.damage.length}) < Lawan (${opp.damage.length}): Efek Heal tidak aktif.`, "info");
+                {
+                    const opp = player === this.p1 ? this.p2 : this.p1;
+                    const effectiveDamage = player.damage.length + (isDamageCheck ? 1 : 0);
+                    if (this.canHeal(player, isDamageCheck)) {
+                        this.healDamageCard(player, null);
+                    } else {
+                        this.log(`[Heal Trigger] Damage ${player.name} (${effectiveDamage}) < Lawan (${opp.damage.length}): Efek Heal tidak aktif, hanya mendapatkan Power +10,000.`, "info");
+                    }
                 }
                 break;
 
@@ -1125,7 +1149,9 @@ class VanguardEngine {
             total: totalDamage,
             isTrigger: damageCard.trigger !== TRIGGER_TYPE.NONE,
             triggerType: damageCard.trigger,
-            player: opp
+            player: opp,
+            isDriveCheck: false,
+            isDamageCheck: true
         });
     }
 

@@ -2070,13 +2070,44 @@ class VanguardUI {
             const targetName = targetUnit ? targetUnit.card.name : 'Vanguard';
 
             this.engine.applyTriggerPower(player, targetKey, powerAmount);
+            this.showFloatingBuffFX(player.id, targetKey, `+${powerAmount.toLocaleString()}`, 'power');
+
             if (triggerType === 'CRITICAL') {
                 this.engine.applyTriggerCritical(player, targetKey, 1);
+                this.showFloatingBuffFX(player.id, targetKey, `+1 CRIT`, 'crit');
+                this.showTriggerPromptPill(`Power +${powerAmount.toLocaleString()} & Crit +1 -> ${targetName}!`);
+                this.renderAll();
+                setTimeout(() => {
+                    this.hideTriggerPromptPill();
+                    onCardFinished();
+                }, 850);
+                return;
             }
-            this.engine.applyTriggerAdditional(player, triggerType);
 
-            const critText = triggerType === 'CRITICAL' ? ' & Crit +1' : '';
-            this.showTriggerPromptPill(`Power +${powerAmount.toLocaleString()}${critText} -> ${targetName}!`);
+            if (triggerType === 'HEAL') {
+                this.showTriggerPromptPill(`Power +${powerAmount.toLocaleString()} -> ${targetName}!`);
+                this.renderAll();
+
+                const canHeal = this.engine.canHeal(player, !!payload.isDamageCheck);
+                if (canHeal) {
+                    setTimeout(() => {
+                        this.hideTriggerPromptPill();
+                        this.showHealCardSelectionModal(player, onCardFinished);
+                    }, 500);
+                } else {
+                    const opp = player === this.engine.p1 ? this.engine.p2 : this.engine.p1;
+                    const effDmg = player.damage.length + (payload.isDamageCheck ? 1 : 0);
+                    this.engine.log(`[Heal Trigger] Damage ${player.name} (${effDmg}) < Lawan (${opp.damage.length}): Efek Heal tidak aktif, hanya mendapatkan Power +10,000.`, "info");
+                    setTimeout(() => {
+                        this.hideTriggerPromptPill();
+                        onCardFinished();
+                    }, 850);
+                }
+                return;
+            }
+
+            this.engine.applyTriggerAdditional(player, triggerType, !!payload.isDamageCheck);
+            this.showTriggerPromptPill(`Power +${powerAmount.toLocaleString()} -> ${targetName}!`);
             this.renderAll();
             setTimeout(() => {
                 this.hideTriggerPromptPill();
@@ -2118,8 +2149,29 @@ class VanguardUI {
                 state.step = 'CRITICAL';
                 this.showTriggerPromptPill(`KLIK UNIT DI FIELD (${player.name}) UNTUK CRITICAL +1`);
                 this.renderAll();
+            } else if (triggerType === 'HEAL') {
+                this.showTriggerPromptPill(`Power +${powerAmount.toLocaleString()} -> ${unitName}!`);
+                this.renderAll();
+                state.active = false;
+                this.triggerSelectionState = null;
+
+                const canHeal = this.engine.canHeal(player, !!state.payload.isDamageCheck);
+                if (canHeal) {
+                    setTimeout(() => {
+                        this.hideTriggerPromptPill();
+                        this.showHealCardSelectionModal(player, state.onFinish);
+                    }, 500);
+                } else {
+                    const opp = player === this.engine.p1 ? this.engine.p2 : this.engine.p1;
+                    const effDmg = player.damage.length + (state.payload.isDamageCheck ? 1 : 0);
+                    this.engine.log(`[Heal Trigger] Damage ${player.name} (${effDmg}) < Lawan (${opp.damage.length}): Efek Heal tidak aktif, hanya mendapatkan Power +10,000.`, "info");
+                    setTimeout(() => {
+                        this.hideTriggerPromptPill();
+                        if (state.onFinish) state.onFinish();
+                    }, 850);
+                }
             } else {
-                this.engine.applyTriggerAdditional(player, triggerType);
+                this.engine.applyTriggerAdditional(player, triggerType, !!state.payload.isDamageCheck);
                 this.showTriggerPromptPill(`Power +${powerAmount.toLocaleString()} -> ${unitName}!`);
                 this.renderAll();
                 state.active = false;
@@ -2143,6 +2195,74 @@ class VanguardUI {
                 if (state.onFinish) state.onFinish();
             }, 500);
         }
+    }
+
+    showHealCardSelectionModal(player, onFinished) {
+        if (!player || player.damage.length === 0) {
+            if (onFinished) onFinished();
+            return;
+        }
+
+        const isOnline = (this.network && this.network.isOnline);
+        const isMyTurnToChoose = (!isOnline) || (this.network.myPlayerId === player.id);
+
+        if (!isMyTurnToChoose) {
+            this.elModal.innerHTML = `
+                <div class="modal-content" style="max-width:440px;text-align:center;">
+                    <div class="modal-title" style="color:#10b981;">HEAL TRIGGER AKTIF!</div>
+                    <div style="font-size:13px;color:#94a3b8;margin:16px 0;">
+                        <span class="inline-spinner"></span> Menunggu ${player.name} memilih 1 kartu dari Damage Zone untuk di-heal...
+                    </div>
+                </div>
+            `;
+            this.elModal.style.display = 'flex';
+            this.healSelectionPendingCallback = onFinished;
+            return;
+        }
+
+        this.elModal.innerHTML = `
+            <div class="modal-content" style="max-width:760px;text-align:center;">
+                <div class="modal-title" style="color:#10b981;font-size:18px;">HEAL TRIGGER AKTIF!</div>
+                <p style="color:#cbd5e1;font-size:13px;margin:8px 0 16px 0;">
+                    Jumlah Damage Anda <b>≥ Lawan</b>. Pilih <b>1 kartu</b> di Damage Zone untuk di-heal ke Drop Zone:
+                </p>
+                <div class="cards-selection-row" id="healDamageCardsRow" style="justify-content:center;gap:12px;padding:10px 0;max-height:50vh;overflow-x:auto;"></div>
+                <div style="font-size:11.5px;color:#94a3b8;margin-top:12px;">
+                    Klik salah satu kartu di atas untuk memindahkannya dari Damage Zone ke Drop Zone.
+                </div>
+            </div>
+        `;
+        this.elModal.style.display = 'flex';
+
+        const row = document.getElementById('healDamageCardsRow');
+        player.damage.forEach((card, idx) => {
+            const cardEl = this.createCardElement(card);
+            cardEl.className += ' selectable-item heal-pick-item';
+            cardEl.style.cursor = 'pointer';
+            cardEl.style.border = '2px solid #10b981';
+            cardEl.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.4)';
+            cardEl.title = `Klik untuk Heal: ${card.name}`;
+
+            if (card.faceDown) {
+                const badge = document.createElement('div');
+                badge.style.cssText = 'position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,0.85);color:#f59e0b;font-size:8.5px;font-weight:800;text-align:center;padding:2px;border-radius:3px;border:1px solid #f59e0b;';
+                badge.textContent = 'FACE-DOWN';
+                cardEl.style.position = 'relative';
+                cardEl.appendChild(badge);
+            }
+
+            cardEl.onmouseenter = () => this.inspectCard(card);
+            cardEl.onclick = () => {
+                this.elModal.style.display = 'none';
+                if (!this.dispatchAction('HEAL_CARD_SELECTION', { damageIndex: idx })) {
+                    this.engine.healDamageCard(player, idx);
+                }
+                this.showSplash(`HEAL 1 DAMAGE! (${card.name})`, "green");
+                this.renderAll();
+                if (onFinished) onFinished();
+            };
+            row.appendChild(cardEl);
+        });
     }
 
     showMulliganModal(playerNum) {
@@ -3532,6 +3652,9 @@ class VanguardUI {
                 break;
             case 'SELECT_TRIGGER_CRIT':
                 this.engine.applyTriggerCritical(this.engine.p2, payload.circleKey, payload.amount || 1);
+                break;
+            case 'HEAL_CARD_SELECTION':
+                this.engine.healDamageCard(this.engine.p2, payload.damageIndex);
                 break;
         }
     }
