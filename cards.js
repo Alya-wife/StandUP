@@ -98,57 +98,63 @@ function createCard(id, name, nation, grade, power, shield, critical, trigger = 
 
 // Base Default Card Catalog
 const DEFAULT_CARD_CATALOG = [
-    // DZ-TD01 Dragon Empire Cards
-    createCard('dz_001', 'Heated Blade, Ardart', 'Dragon Empire', 0, 6000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dztd01_001.webp',
+    // DZ-TD01 Dragon Empire Cards (Start Deck 01 Official)
+    createCard('DZ-TD01/001', 'Roaring Thunder Dragon, Triumph Dragon', 'Dragon Empire', 3, 13000, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.TWIN_DRIVE], 'img/Card/dztd01_001.webp',
+        '[ACT](VC)[1/turn]:[COST][Counter-Blast 1], search your deck for up to one card with the same card name as this unit, reveal it and put it into hand, shuffle the deck, and this unit gets [Power] +10000 until end of turn.\n[AUTO](VC):When this unit attacks a vanguard, [COST][Energy-Blast 4], choose one of your opponent\'s rear-guards, retire it, and this unit gets [Power] +5000/[Critical] +1 until end of that battle. (Use four Energy to pay [Energy-Blast 4]!)'),
+
+    createCard('DZ-TD01/002', 'Roaring Thunder Beast, Kitenraiz', 'Dragon Empire', 2, 10000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.INTERCEPT], 'img/Card/dztd01_002.webp',
+        '[Auto](VC): When placed by riding from "Roaring Flame Beast, Karaleor", choose one of your opponent\'s rear-guards, and retire it.'),
+
+    createCard('DZ-TD01/003', 'Roaring Flame Beast, Karaleor', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dz_td01_003.webp',
+        '[Auto](VC): When placed by riding from "Heated Blade, Ardart", search your deck for up to one "Energy Generator", put it into the Order Zone, and shuffle your deck.'),
+
+    createCard('DZ-TD01/004', 'Heated Blade, Ardart', 'Dragon Empire', 0, 6000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dz_td01_004.webp',
         '[Auto]: When this unit is rode upon, if you went second, draw a card.'),
-
-    createCard('dz_002', 'Roaring Thunder Dragon, Triumph Dragon', 'Dragon Empire', 3, 13000, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.TWIN_DRIVE], 'img/Card/dztd01_002.webp',
-        '[ACT](VC)[1/Turn]: [Cost: CB(1)], search your deck for up to one card with the same card name as this unit, reveal it and put it into hand, shuffle the deck, and this unit gets [Power] +10,000 until end of turn.\n[AUTO](VC): When this unit attacks a vanguard, [Cost: EB(4)], choose one of your opponent\'s rear-guards, retire it, and this unit gets [Power] +5000/[Critical] +1 until end of that battle.'),
-
-    createCard('dz_003', 'Flare Veil Dragon', 'Dragon Empire', 2, 10000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.INTERCEPT], 'img/Card/dztd01_003.webp',
-        '[Auto](VC/RC): When placed, if your vanguard is Grade 2 or greater, this unit gets [Power] +5000 until end of turn.'),
-
-    createCard('dz_004', 'Dragritter, Midhat', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dztd01_004.webp',
-        '[Auto](VC/RC): When this unit boosts, if you have three or more other units, the boosted unit gets [Power] +2000 until end of battle.'),
 
     createCard('dz_005', 'Energy Generator', 'Dragon Empire', 0, 0, 0, 0, TRIGGER_TYPE.NONE, [], 'img/Card/dztd01_005.webp',
         '[Crest] At the beginning of your ride phase, if you went second and this is your first turn, or if this is your second turn or later, [Energy Charge] (3) (max 10). [Act][1/Turn]: [Cost: Energy Blast (7)], draw a card.', true),
 
-    createCard('dz_006', 'Dragritter, Shuhaib', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dztd01_006.webp',
-        '[Auto](RC): When this unit attacks or boosts, if you have three or more front row units, this unit gets [Power] +2000 until end of battle.'),
-
-    createCard('dz_007', 'Flame Sword Warrior, Radilka', 'Dragon Empire', 3, 13000, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.TWIN_DRIVE], 'img/Card/dztd01_007.webp',
+    createCard('DZ-TD01/006', 'Quaydest Dragon', 'Dragon Empire', 3, 13000, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.TWIN_DRIVE], 'img/Card/dz_td01_006.webp',
         '[Auto](RC): When this unit attacks, if you have a Grade 3 Vanguard, this unit gets [Power] +5000 until end of battle.'),
 
-    createCard('dz_008', 'Dragritter, Falhan', 'Dragon Empire', 2, 10000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.INTERCEPT], 'img/Card/dztd01_008.webp',
-        '[Auto](RC): When this unit attacks, [Cost: SB(1)], this unit gets [Power] +5000 until end of turn.'),
+    createCard('DZ-TD01/007', 'Stealth Rogue of Sword Throwing, Kageichi', 'Dragon Empire', 2, 10000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.INTERCEPT], 'img/Card/dz_td01_007.webp',
+        '[Auto](RC): When placed, if your vanguard is Grade 3 or greater, [Cost: SB(1)], this unit gets [Power] +5000 until end of turn.'),
 
-    createCard('dz_009', 'Dragritter, Shihab', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dztd01_009.webp',
+    createCard('DZ-TD01/008', 'Crushing Dragon, Spinoassaulter', 'Dragon Empire', 2, 10000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.INTERCEPT], 'img/Card/dz_td01_008.webp',
+        '[Auto](RC): When this unit attacks, [Cost: CB(1)], this unit gets [Power] +5000 until end of battle.'),
+
+    createCard('DZ-TD01/009', 'Elecblow Dragon', 'Dragon Empire', 2, 10000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.INTERCEPT], 'img/Card/dz_td01_009.webp',
+        '[Auto](RC): When this unit attacks or boosts, this unit gets [Power] +2000 until end of battle.'),
+
+    createCard('DZ-TD01/010', 'Stealth Dragon, Kudenmusubi', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dz_td01_010.webp',
         '[Auto](RC): When this unit boosts, choose one of your other units, it gets [Power] +2000 until end of turn.'),
 
-    createCard('dz_010', 'Steam Gunner, Tizqar (Sentinel)', 'Dragon Empire', 1, 8000, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST, SKILL_TYPE.SENTINEL], 'img/Card/dztd01_010.webp',
+    createCard('DZ-TD01/011', 'Dragritter, Yumna', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dz_td01_011.webp',
+        '[Auto](RC): When placed, [Cost: SB(1)], look at top card of your deck.'),
+
+    createCard('DZ-TD01/012', 'Iron Ball Dragon, Ankybowler', 'Dragon Empire', 1, 8000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], 'img/Card/dz_td01_012.webp',
+        '[Auto](RC): When this unit boosts, if you have three or more other units, the boosted unit gets [Power] +2000 until end of battle.'),
+
+    createCard('DZ-TD01/013', 'Escort Stealth Dragon, Hayashi Kaze', 'Dragon Empire', 1, 7000, 0, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST, SKILL_TYPE.SENTINEL], 'img/Card/dztd01_013.webp',
         '[Sentinel] (You may only have up to four Sentinels in a deck) [Auto]: When this unit is put on (GC) from hand, choose one of your units, and it cannot be hit until end of battle.'),
 
-    createCard('dz_011', 'Blaze Drake (Critical Trigger)', 'Dragon Empire', 0, 5000, 10000, 1, TRIGGER_TYPE.CRITICAL, [SKILL_TYPE.BOOST], 'img/Card/dztd01_011.webp',
+    createCard('DZ-TD01/014E', 'Rogue Beast, Sunegosuri', 'Dragon Empire', 0, 5000, 10000, 1, TRIGGER_TYPE.CRITICAL, [SKILL_TYPE.BOOST], 'img/Card/dztd01_014.webp',
         '[Trigger: Critical] When revealed in drive/damage check, choose a unit to get [Power] +10,000, and choose a unit to get [Critical] +1!'),
 
-    createCard('dz_012', 'Flame Drake (Critical Trigger)', 'Dragon Empire', 0, 5000, 10000, 1, TRIGGER_TYPE.CRITICAL, [SKILL_TYPE.BOOST], 'img/Card/dztd01_012.webp',
-        '[Trigger: Critical] When revealed in drive/damage check, choose a unit to get [Power] +10,000, and choose a unit to get [Critical] +1!'),
-
-    createCard('dz_013', 'Red Flare Dragon (Front Trigger)', 'Dragon Empire', 0, 5000, 10000, 1, TRIGGER_TYPE.FRONT, [SKILL_TYPE.BOOST], 'img/Card/dztd01_013.webp',
-        '[Trigger: Front] When revealed in drive/damage check, all front row units get [Power] +10,000 until end of turn!'),
-
-    createCard('dz_014', 'Flame of Hope (Draw Trigger)', 'Dragon Empire', 0, 5000, 5000, 1, TRIGGER_TYPE.DRAW, [SKILL_TYPE.BOOST], 'img/Card/dztd01_014.webp',
+    createCard('DZ-TD01/015', 'Jaggy Dagger Dragon', 'Dragon Empire', 0, 5000, 5000, 1, TRIGGER_TYPE.DRAW, [SKILL_TYPE.BOOST], 'img/Card/dztd01_015.webp',
         '[Trigger: Draw] When revealed in drive/damage check, choose a unit to get [Power] +10,000, and draw one card!'),
 
-    createCard('dz_015', 'Comfort Dragon (Heal Trigger)', 'Dragon Empire', 0, 5000, 15000, 1, TRIGGER_TYPE.HEAL, [SKILL_TYPE.BOOST], 'img/Card/dztd01_015.webp',
+    createCard('DZ-TD01/016', 'Electrake Dracokid', 'Dragon Empire', 0, 5000, 15000, 1, TRIGGER_TYPE.FRONT, [SKILL_TYPE.BOOST], 'img/Card/dztd01_016.webp',
+        '[Trigger: Front] When revealed in drive/damage check, all front row units get [Power] +10,000 until end of turn!'),
+
+    createCard('DZ-TD01/017', 'Refreshing Wind Dragon, Dinobreeze', 'Dragon Empire', 0, 5000, 15000, 1, TRIGGER_TYPE.HEAL, [SKILL_TYPE.BOOST], 'img/Card/dztd01_017.webp',
         '[Trigger: Heal] (Max 4 in deck) When revealed, choose a unit to get [Power] +10,000. If your damage count is >= opponent damage, heal one damage!'),
 
-    createCard('dz_016', 'Spiritual King of Ignition, Dragveda (Over Trigger)', 'Dragon Empire', 0, 5000, 50000, 1, TRIGGER_TYPE.OVER, [SKILL_TYPE.BOOST], 'img/Card/dztd01_016.webp',
-        '[Over Trigger] (Max 1 in deck) When revealed, remove this card from game, draw 1, choose a unit to get [Power] +100,000,000! Additional: [Stand] your vanguard!'),
+    createCard('D-LTD01/010', 'Spiritual King of Determination, Olbaria', 'Cray Elemental', 0, 5000, 50000, 1, TRIGGER_TYPE.OVER, [SKILL_TYPE.BOOST], 'img/Card/d_ltd01_010.webp',
+        '[Over Trigger] (Max 1 in deck) When revealed, remove this card from game, draw 1, choose a unit to get [Power] +100,000,000! Additional: Choose one of your units, and it gets [Power] +100,000,000 until end of turn!'),
 
-    createCard('dz_017', 'Blazing Slash', 'Dragon Empire', 2, 0, 0, 0, TRIGGER_TYPE.NONE, [], 'img/Card/dztd01_017.webp',
-        '[Normal Order] [Cost: CB(1)], choose one of your units, and it gets [Power] +10,000 until end of turn.'),
+    createCard('DZSS06', 'Elementaria Sanctitude', 'Cray Elemental', 1, 0, 0, 1, TRIGGER_TYPE.NONE, [], 'img/Card/dzss06.webp',
+        '[Blitz Order / Sentinel] (Kartu ini dianggap sebagai semua nation).\n[Cost: Discard 1 kartu], pilih 1 unitmu yang sedang diserang, dan unit tersebut tidak dapat terkena hit hingga akhir battle ini.'),
 
     // Keter Sanctuary Cards (Bastion Line)
     createCard('ks_001', 'Rook', 'Keter Sanctuary', 0, 6000, 5000, 1, TRIGGER_TYPE.NONE, [SKILL_TYPE.BOOST], '',
@@ -384,21 +390,36 @@ function createDefaultDecks() {
             id: "varga_dragres",
             name: "Dragon Empire (Triumph Dragon - DZ-TD01)",
             nation: "Dragon Empire",
-            rideDeckIds: ['dz_001', 'dz_004', 'dz_003', 'dz_002', 'dz_005'], // G0 -> G1 -> G2 -> G3 -> Crest
+            rideDeckIds: [
+                'DZ-TD01/004', // G0 Heated Blade, Ardart
+                'DZ-TD01/003', // G1 Roaring Flame Beast, Karaleor
+                'DZ-TD01/002', // G2 Roaring Thunder Beast, Kitenraiz
+                'DZ-TD01/001', // G3 Roaring Thunder Dragon, Triumph Dragon
+                'dz_005'       // Crest: Energy Generator
+            ],
             mainDeckIds: [
-                // Grade 3 (8)
-                'dz_002', 'dz_002', 'dz_002', 'dz_007', 'dz_007', 'dz_007', 'dz_007', 'dz_007',
-                // Grade 2 (10)
-                'dz_003', 'dz_003', 'dz_003', 'dz_008', 'dz_008', 'dz_008', 'dz_008', 'dz_017', 'dz_017', 'dz_017',
-                // Grade 1 (16)
-                'dz_010', 'dz_010', 'dz_010', 'dz_010', // 4 Sentinel
-                'dz_004', 'dz_004', 'dz_004', 'dz_006', 'dz_006', 'dz_006', 'dz_009', 'dz_009', 'dz_009', 'dz_009', 'dz_009', 'dz_009',
-                // Triggers (16: 8 Crit, 2 Front, 1 Draw, 4 Heal, 1 Over)
-                'dz_011', 'dz_011', 'dz_011', 'dz_011', 'dz_012', 'dz_012', 'dz_012', 'dz_012', // 8 Crit
-                'dz_013', 'dz_013', // 2 Front
-                'dz_014', // 1 Draw
-                'dz_015', 'dz_015', 'dz_015', 'dz_015', // 4 Heal
-                'dz_016' // 1 Over
+                // Grade 3 (7 cards)
+                'DZ-TD01/001', 'DZ-TD01/001', 'DZ-TD01/001',
+                'DZ-TD01/006', 'DZ-TD01/006', 'DZ-TD01/006', 'DZ-TD01/006',
+
+                // Grade 2 (11 cards)
+                'DZ-TD01/002', 'DZ-TD01/002', 'DZ-TD01/002',
+                'DZ-TD01/007', 'DZ-TD01/007', 'DZ-TD01/007', 'DZ-TD01/007',
+                'DZ-TD01/008', 'DZ-TD01/008', 'DZ-TD01/008', 'DZ-TD01/008',
+
+                // Grade 1 (16 cards)
+                'DZ-TD01/003', 'DZ-TD01/003', 'DZ-TD01/003',
+                'DZ-TD01/009', 'DZ-TD01/009', 'DZ-TD01/009',
+                'DZ-TD01/010', 'DZ-TD01/010', 'DZ-TD01/010',
+                'DZ-TD01/011', 'DZ-TD01/011', 'DZ-TD01/011',
+                'DZ-TD01/013', 'DZ-TD01/013', 'DZ-TD01/013', 'DZ-TD01/013', // 4 Sentinel
+
+                // Triggers (16 cards: 4 Crit, 3 Draw, 4 Front, 4 Heal, 1 Over)
+                'DZ-TD01/014E', 'DZ-TD01/014E', 'DZ-TD01/014E', 'DZ-TD01/014E', // 4 Critical
+                'DZ-TD01/015', 'DZ-TD01/015', 'DZ-TD01/015',                     // 3 Draw
+                'DZ-TD01/016', 'DZ-TD01/016', 'DZ-TD01/016', 'DZ-TD01/016',     // 4 Front
+                'DZ-TD01/017', 'DZ-TD01/017', 'DZ-TD01/017', 'DZ-TD01/017',     // 4 Heal
+                'D-LTD01/010'                                                   // 1 Over Trigger
             ]
         },
         "bastion_sanctuary": {
@@ -550,7 +571,42 @@ function setActiveDeckId(deckId) {
 }
 
 function getCardById(cardId) {
-    return CARD_CATALOG.find(c => c.id === cardId) || null;
+    if (!cardId) return null;
+    let card = CARD_CATALOG.find(c => c.id === cardId);
+    if (card) return card;
+
+    const aliases = {
+        'dz_001': 'DZ-TD01/004',
+        'dz_002': 'DZ-TD01/001',
+        'dz_003': 'DZ-TD01/002',
+        'dz_004': 'DZ-TD01/003',
+        'dz_005': 'dz_005',
+        'dz_006': 'DZ-TD01/006',
+        'dz_007': 'DZ-TD01/007',
+        'dz_008': 'DZ-TD01/008',
+        'dz_009': 'DZ-TD01/009',
+        'dz_010': 'DZ-TD01/010',
+        'dz_011': 'DZ-TD01/014E',
+        'dz_012': 'DZ-TD01/014E',
+        'dz_013': 'DZ-TD01/016',
+        'dz_014': 'DZ-TD01/015',
+        'dz_015': 'DZ-TD01/017',
+        'dz_016': 'D-LTD01/010',
+        'dz_017': 'DZSS06',
+        'DZ-TD01/005': 'dz_005'
+    };
+
+    if (aliases[cardId]) {
+        const target = CARD_CATALOG.find(c => c.id === aliases[cardId]);
+        if (target) return target;
+    }
+    for (const oldKey in aliases) {
+        if (aliases[oldKey] === cardId) {
+            const target = CARD_CATALOG.find(c => c.id === oldKey);
+            if (target) return target;
+        }
+    }
+    return null;
 }
 
 // Construct playable card objects for engine
