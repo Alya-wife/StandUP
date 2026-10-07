@@ -1038,7 +1038,7 @@ class VanguardUI {
                 if (dropEl) dropEl.textContent = '0';
             }
 
-            // Damage Zone vertical stacking of standard cards
+            // Damage Zone uncropped landscape stacking
             const stackEl = document.getElementById(`${prefix}damageStack`);
             if (stackEl) {
                 stackEl.innerHTML = '';
@@ -1050,8 +1050,8 @@ class VanguardUI {
                     slotEl.innerHTML = `
                         <div class="damage-card-inner">
                             ${isFaceDown 
-                                ? `<div class="damage-facedown-card">CB</div>` 
-                                : `<img src="${card.image || 'img/Card/dztd01_002.webp'}" class="damage-card-normal-img" alt="${card.name}">`
+                                ? `<div class="damage-facedown-card" style="width:100%;height:100%;background:linear-gradient(135deg, #0f172a, #1e293b);border:1.5px solid #475569;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px;font-weight:900;border-radius:4px;letter-spacing:0.5px;box-shadow:inset 0 0 8px rgba(0,0,0,0.8);">CB</div>` 
+                                : `<img src="${card.image || 'img/Card/dztd01_002.webp'}" class="damage-card-rotated-img" alt="${card.name}">`
                             }
                         </div>
                     `;
