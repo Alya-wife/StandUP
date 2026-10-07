@@ -987,19 +987,31 @@ class VanguardUI {
             }
 
             // Order Zone Stack
+            const orderSlot = document.getElementById(`${prefix}orderSlot`);
             const orderStack = document.getElementById(`${prefix}orderCards`);
+            const orderLabel = orderSlot ? orderSlot.querySelector('.order-slot-label') : null;
             if (orderStack) {
                 orderStack.innerHTML = '';
                 if (p.orderZone && p.orderZone.length > 0) {
-                    p.orderZone.forEach(c => {
-                        const oImg = document.createElement('img');
-                        oImg.className = 'order-card-thumb';
-                        oImg.src = c.image || 'img/Card/dztd01_002.webp';
-                        oImg.alt = c.name;
-                        oImg.title = `${c.name} [${c.cardType || 'Order'}] (Order Zone)`;
-                        oImg.onmouseenter = () => this.inspectCard(c);
-                        orderStack.appendChild(oImg);
-                    });
+                    if (orderLabel) orderLabel.style.display = 'none';
+                    const topOrder = p.orderZone[p.orderZone.length - 1];
+                    const oImg = document.createElement('img');
+                    oImg.className = 'order-card-thumb';
+                    oImg.src = topOrder.image || 'img/Card/dztd01_002.webp';
+                    oImg.alt = topOrder.name;
+                    oImg.title = `${topOrder.name} [${topOrder.cardType || 'Order'}] (Order Zone)`;
+                    oImg.onmouseenter = () => this.inspectCard(topOrder);
+                    oImg.onclick = () => this.inspectCard(topOrder);
+                    orderStack.appendChild(oImg);
+
+                    if (p.orderZone.length > 1) {
+                        const badge = document.createElement('span');
+                        badge.className = 'order-count-badge';
+                        badge.textContent = p.orderZone.length;
+                        orderStack.appendChild(badge);
+                    }
+                } else {
+                    if (orderLabel) orderLabel.style.display = 'block';
                 }
             }
 
@@ -1026,7 +1038,7 @@ class VanguardUI {
                 if (dropEl) dropEl.textContent = '0';
             }
 
-            // Damage Zone uncropped landscape stacking
+            // Damage Zone vertical stacking of standard cards
             const stackEl = document.getElementById(`${prefix}damageStack`);
             if (stackEl) {
                 stackEl.innerHTML = '';
@@ -1038,12 +1050,13 @@ class VanguardUI {
                     slotEl.innerHTML = `
                         <div class="damage-card-inner">
                             ${isFaceDown 
-                                ? `<div class="damage-facedown-card" style="width:100%;height:100%;background:linear-gradient(135deg, #0f172a, #1e293b);border:1.5px solid #475569;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px;font-weight:900;border-radius:4px;letter-spacing:0.5px;box-shadow:inset 0 0 8px rgba(0,0,0,0.8);">CB</div>` 
-                                : `<img src="${card.image || 'img/Card/dztd01_002.webp'}" class="damage-card-rotated-img" alt="${card.name}">`
+                                ? `<div class="damage-facedown-card">CB</div>` 
+                                : `<img src="${card.image || 'img/Card/dztd01_002.webp'}" class="damage-card-normal-img" alt="${card.name}">`
                             }
                         </div>
                     `;
                     if (!isFaceDown) slotEl.onmouseenter = () => this.inspectCard(card);
+                    slotEl.onclick = () => this.inspectCard(card);
                     stackEl.appendChild(slotEl);
                 });
             }
