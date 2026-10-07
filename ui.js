@@ -609,13 +609,20 @@ class VanguardUI {
 
                 // Triumph Dragon [ACT] button on Vanguard during Main Phase
                 if (key === 'vc' && this.engine.phase === 'MAIN_PHASE' && this.engine.activePlayer === playerNum) {
-                    if (this.engine.canActivateTriumphAct(player)) {
+                    const isTriumph = unit.card.id === 'DZ-TD01/001' || unit.card.id === 'dz_002' || (unit.card.name && (unit.card.name.toLowerCase().includes('triumph') || unit.card.name.toLowerCase().includes('varga')));
+                    if (isTriumph && !unit.actUsedThisTurn) {
+                        const canPay = this.engine.canCounterBlast(player, 1);
                         const actBtn = document.createElement('button');
-                        actBtn.className = 'btn-act-trigger';
-                        actBtn.innerHTML = '[ACT] Cari Kartu & +10k';
+                        actBtn.className = `btn-act-trigger ${canPay ? 'ready' : 'disabled'}`;
+                        actBtn.innerHTML = '[ACT] Cari & +10k';
+                        actBtn.title = canPay ? 'Gunakan efek [ACT] Triumph Dragon (CB1)' : 'Perlu 1 Damage Face-Up untuk CB(1)';
                         actBtn.onclick = (e) => {
                             e.stopPropagation();
-                            this.openTriumphActModal(player);
+                            if (canPay) {
+                                this.openTriumphActModal(player);
+                            } else {
+                                this.showSplash('Tidak cukup damage face-up untuk Counter-Blast 1!', 'red');
+                            }
                         };
                         el.appendChild(actBtn);
                     }
@@ -1522,6 +1529,21 @@ class VanguardUI {
                     this.renderAll();
                 }
                 return;
+            }
+
+            // Direct click on Vanguard to trigger ACT ability
+            if (circleKey === 'vc') {
+                const vcUnit = active.circles.vc;
+                if (vcUnit && (vcUnit.card.id === 'DZ-TD01/001' || vcUnit.card.id === 'dz_002' || (vcUnit.card.name && vcUnit.card.name.toLowerCase().includes('triumph')))) {
+                    if (this.engine.canActivateTriumphAct(active)) {
+                        this.openTriumphActModal(active);
+                    } else if (vcUnit.actUsedThisTurn) {
+                        this.showSplash("Efek [ACT] Triumph Dragon sudah digunakan pada giliran ini (1/Turn)!", "amber");
+                    } else if (!this.engine.canCounterBlast(active, 1)) {
+                        this.showSplash("Perlu 1 kartu face-up di Damage Zone untuk Counter-Blast 1!", "red");
+                    }
+                    return;
+                }
             }
 
             // Rear-guard Column Movement / Swap between Front & Back row

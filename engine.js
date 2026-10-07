@@ -389,7 +389,7 @@ class VanguardEngine {
         if (this.phase !== 'MAIN_PHASE' || this.activePlayer !== player.id) return false;
         const vcUnit = player.circles.vc;
         if (!vcUnit || vcUnit.actUsedThisTurn) return false;
-        const isTriumph = vcUnit.card.id === 'dz_002' || (vcUnit.card.name && (vcUnit.card.name.toLowerCase().includes('triumph') || vcUnit.card.name.toLowerCase().includes('varga')));
+        const isTriumph = vcUnit.card.id === 'DZ-TD01/001' || vcUnit.card.id === 'dz_002' || (vcUnit.card.name && (vcUnit.card.name.toLowerCase().includes('triumph') || vcUnit.card.name.toLowerCase().includes('varga')));
         if (!isTriumph) return false;
         return this.canCounterBlast(player, 1);
     }
@@ -400,7 +400,12 @@ class VanguardEngine {
         const targetName = vcUnit.card.name;
         const matches = [];
         player.deck.forEach((card, idx) => {
-            if (card.name === targetName || (card.id === 'dz_002' && vcUnit.card.id === 'dz_002')) {
+            const isMatch = card.id === vcUnit.card.id ||
+                card.name === targetName ||
+                (card.id === 'DZ-TD01/001' && (vcUnit.card.id === 'DZ-TD01/001' || vcUnit.card.id === 'dz_002')) ||
+                (card.id === 'dz_002' && (vcUnit.card.id === 'DZ-TD01/001' || vcUnit.card.id === 'dz_002')) ||
+                (card.name && vcUnit.card.name && card.name.toLowerCase().includes('triumph') && vcUnit.card.name.toLowerCase().includes('triumph'));
+            if (isMatch) {
                 matches.push({ card, deckIndex: idx });
             }
         });
@@ -691,7 +696,7 @@ class VanguardEngine {
         // Check if attacker has on-attack [AUTO] ability:
         // Triumph Dragon: [AUTO](VC): When this unit attacks a vanguard, [COST][Energy-Blast 4], retire 1 opponent rear-guard, +5000 Power & +1 Critical!
         const isTriumph = attackerCircleKey === 'vc' && targetCircleKey === 'vc' &&
-            (attackerUnit.card.id === 'dz_002' || (attackerUnit.card.name && (attackerUnit.card.name.toLowerCase().includes('triumph') || attackerUnit.card.name.toLowerCase().includes('varga'))));
+            (attackerUnit.card.id === 'DZ-TD01/001' || attackerUnit.card.id === 'dz_002' || (attackerUnit.card.name && (attackerUnit.card.name.toLowerCase().includes('triumph') || attackerUnit.card.name.toLowerCase().includes('varga'))));
 
         if (isTriumph && this.canEnergyBlast(p, 4)) {
             this.phase = 'ATTACK_EFFECT_STEP';
