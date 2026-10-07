@@ -284,6 +284,15 @@ function saveCardToDatabase(cardData, oldCardId = null) {
         localStorage.setItem(CUSTOM_CARDS_STORAGE_KEY, JSON.stringify(custom));
     }
 
+    // Auto-sync to localhost save_card.php
+    try {
+        fetch('save_card.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(getCustomCards())
+        }).catch(() => {});
+    } catch (e) {}
+
     reloadCardCatalog();
     return true;
 }
@@ -296,6 +305,13 @@ function deleteCardFromDatabase(cardId) {
     const filtered = custom.filter(c => c.id !== cardId);
     if (filtered.length !== custom.length) {
         localStorage.setItem(CUSTOM_CARDS_STORAGE_KEY, JSON.stringify(filtered));
+        try {
+            fetch('save_card.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(filtered)
+            }).catch(() => {});
+        } catch (e) {}
     }
 
     // 2. Remove from modified cards
@@ -405,10 +421,43 @@ function createDefaultDecks() {
     };
 }
 
-// LocalStorage & Server Deck Management
+// LocalStorage & Server Deck/Card Management
+async function syncCardsFromServer() {
+    try {
+        const res = await fetch('cards/custom_cards.json?v=' + Date.now());
+        if (res.ok) {
+            const serverCards = await res.json();
+            if (Array.isArray(serverCards) && serverCards.length > 0) {
+                const localCards = getCustomCards();
+                let hasChanges = false;
+                serverCards.forEach(sc => {
+                    const idx = localCards.findIndex(lc => lc.id === sc.id);
+                    if (idx === -1) {
+                        localCards.push(sc);
+                        hasChanges = true;
+                    } else if (JSON.stringify(localCards[idx]) !== JSON.stringify(sc)) {
+                        localCards[idx] = sc;
+                        hasChanges = true;
+                    }
+                });
+                if (hasChanges) {
+                    localStorage.setItem(CUSTOM_CARDS_STORAGE_KEY, JSON.stringify(localCards));
+                    reloadCardCatalog();
+                    if (window.gameUI && typeof window.gameUI.renderAdminCardList === 'function') {
+                        window.gameUI.renderAdminCardList();
+                    }
+                }
+            }
+        }
+    } catch (e) {}
+}
+
 async function syncDecksFromServer() {
     try {
-        const res = await fetch('decks.json?v=' + Date.now());
+        let res = await fetch('decks/decks.json?v=' + Date.now());
+        if (!res.ok) {
+            res = await fetch('decks.json?v=' + Date.now());
+        }
         if (res.ok) {
             const serverDecks = await res.json();
             if (serverDecks && typeof serverDecks === 'object') {
@@ -435,6 +484,7 @@ async function syncDecksFromServer() {
 
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
+        syncCardsFromServer();
         syncDecksFromServer();
     });
 }

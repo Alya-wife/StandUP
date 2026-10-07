@@ -9,10 +9,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+$decksDir = __DIR__ . '/decks';
+if (!is_dir($decksDir)) {
+    mkdir($decksDir, 0777, true);
+}
 $decksFile = __DIR__ . '/decks.json';
+$decksSubFile = $decksDir . '/decks.json';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (file_exists($decksFile)) {
+    if (file_exists($decksSubFile)) {
+        echo file_get_contents($decksSubFile);
+    } else if (file_exists($decksFile)) {
         echo file_get_contents($decksFile);
     } else {
         echo json_encode([]);
@@ -51,7 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    file_put_contents($decksFile, json_encode($existing, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    $jsonPretty = json_encode($existing, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    file_put_contents($decksFile, $jsonPretty);
+    file_put_contents($decksSubFile, $jsonPretty);
+
+    // Also write individual deck files in decks/
+    foreach ($existing as $deckId => $deckData) {
+        $safeId = preg_replace('/[^a-zA-Z0-9_-]/', '_', $deckId);
+        file_put_contents($decksDir . '/' . $safeId . '.json', json_encode($deckData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
     echo json_encode(['status' => 'success', 'count' => count($existing)]);
     exit;
 }

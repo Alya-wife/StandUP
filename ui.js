@@ -3388,19 +3388,49 @@ class VanguardUI {
             }
 
             this.convertImageFileToWebP(file)
-                .then(res => {
-                    if (imgInput) imgInput.value = res.dataUrl;
+                .then(async res => {
+                    const idInput = document.getElementById('adminInputId');
+                    const cardId = idInput ? idInput.value.trim() : '';
+
+                    // Upload to upload_card_image.php to write directly into img/Card/ folder on disk
+                    let savedServerPath = null;
+                    try {
+                        const uploadRes = await fetch('upload_card_image.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                dataUrl: res.dataUrl,
+                                filename: file.name,
+                                cardId: cardId || ('card_' + Date.now())
+                            })
+                        });
+                        if (uploadRes.ok) {
+                            const upData = await uploadRes.json();
+                            if (upData && upData.path) {
+                                savedServerPath = upData.path;
+                            }
+                        }
+                    } catch (netErr) {
+                        // Fallback silently if offline or on static host
+                    }
+
+                    const finalImgPath = savedServerPath || res.dataUrl;
+                    if (imgInput) imgInput.value = finalImgPath;
 
                     const preview = document.getElementById('adminFormPreviewArt');
-                    if (preview) preview.src = res.dataUrl;
+                    if (preview) preview.src = finalImgPath;
 
                     if (progress) {
                         const origKb = (file.size / 1024).toFixed(1);
                         const newKb = (res.sizeBytes / 1024).toFixed(1);
                         progress.style.color = '#10b981';
-                        progress.textContent = `Berhasil dikonversi ke WebP! (${origKb} KB -> ${newKb} KB)`;
+                        if (savedServerPath) {
+                            progress.textContent = `Tersimpan ke folder "${savedServerPath}"! (${origKb} KB -> ${newKb} KB)`;
+                        } else {
+                            progress.textContent = `Berhasil dikonversi ke WebP! (${origKb} KB -> ${newKb} KB)`;
+                        }
                     }
-                    this.showSplash('Gambar berhasil dikonversi ke format WebP!', 'emerald');
+                    this.showSplash(savedServerPath ? `Foto kartu disimpan ke ${savedServerPath}!` : 'Gambar berhasil dikonversi ke format WebP!', 'emerald');
                 })
                 .catch(err => {
                     console.error('WebP conversion failed:', err);
