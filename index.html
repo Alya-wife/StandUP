@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=49">
+    <link rel="stylesheet" href="style.css?v=50">
 </head>
 <body>
 
@@ -182,7 +182,10 @@
                                     <span class="energy-bolt" style="font-size:9.5px;font-weight:900;">EC</span>
                                     <span class="energy-val" id="p2_energyCount">0</span><span class="energy-max">/10</span>
                                 </div>
-                                <button class="btn-eb7" id="p2_btnEB7" style="display:none;" title="Energy Blast 7: Draw 1 Kartu">EB(7) Draw</button>
+                                <!-- Floating Action Popup Above/Below Crest -->
+                                <div class="crest-action-popup pop-down" id="p2_crestPopup" style="display:none;">
+                                    <button type="button" class="btn-eb7-popup disabled" id="p2_btnEB7">⚡ [EB 7] Draw 1 Kartu</button>
+                                </div>
                             </div>
                             <!-- Order Zone on Right of Energy Counter -->
                             <div class="order-slot-box" id="p2_orderSlot" title="Order Zone">
@@ -241,12 +244,17 @@
                     <!-- ROW 2, COL 2: Center Guardian Circle (GC) Row -->
                     <div class="grid-cell center-gc-cell">
                         <div class="h-divider-line"></div>
-                        <div class="guardian-circle-center" id="circleGC">
+                        <div class="guardian-circle-center" id="circleGC" title="Guardian Circle (GC)">
                             <svg class="crest-svg" id="circleGCSvg" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="44" stroke="#10b981" stroke-width="2.5" fill="rgba(16, 185, 129, 0.14)" stroke-dasharray="4 2" />
-                                <circle cx="50" cy="50" r="32" stroke="#10b981" stroke-width="1.5" fill="none" />
-                                <path d="M50 15 L50 85 M15 50 L85 50" stroke="#10b981" stroke-width="1" opacity="0.4" />
-                                <text x="50" y="58" font-size="26" font-weight="900" fill="#10b981" text-anchor="middle" font-family="'Outfit', sans-serif">G</text>
+                                <circle cx="50" cy="50" r="46" stroke="#10b981" stroke-width="2.5" fill="rgba(16, 185, 129, 0.12)" stroke-dasharray="5 3" />
+                                <circle cx="50" cy="50" r="36" stroke="#34d399" stroke-width="1.5" fill="rgba(5, 150, 105, 0.08)" />
+                                <circle cx="50" cy="50" r="24" stroke="#10b981" stroke-width="1.2" fill="none" stroke-dasharray="2 2" />
+                                <path d="M50 4 L50 96 M4 50 L96 50" stroke="#10b981" stroke-width="1" opacity="0.45" />
+                                <polygon points="50,6 54,16 46,16" fill="#34d399" opacity="0.75" />
+                                <polygon points="50,94 54,84 46,84" fill="#34d399" opacity="0.75" />
+                                <polygon points="6,50 16,46 16,54" fill="#34d399" opacity="0.75" />
+                                <polygon points="94,50 84,46 84,54" fill="#34d399" opacity="0.75" />
+                                <text x="50" y="58" font-size="28" font-weight="900" fill="#fbbf24" text-anchor="middle" font-family="'Outfit', sans-serif">G</text>
                             </svg>
                             <div class="gc-guardians-stack" id="gcGuardiansStack" style="display:none;"></div>
                         </div>
@@ -271,7 +279,10 @@
                                     <span class="energy-bolt" style="font-size:9.5px;font-weight:900;">EC</span>
                                     <span class="energy-val" id="p1_energyCount">0</span><span class="energy-max">/10</span>
                                 </div>
-                                <button class="btn-eb7" id="p1_btnEB7" style="display:none;" title="Energy Blast 7: Draw 1 Kartu">EB(7) Draw</button>
+                                <!-- Floating Action Popup Above/Below Crest -->
+                                <div class="crest-action-popup pop-up" id="p1_crestPopup" style="display:none;">
+                                    <button type="button" class="btn-eb7-popup disabled" id="p1_btnEB7">⚡ [EB 7] Draw 1 Kartu</button>
+                                </div>
                             </div>
                             <!-- Order Zone on Right of Energy Counter -->
                             <div class="order-slot-box" id="p1_orderSlot" title="Order Zone">
@@ -835,15 +846,15 @@
     <div id="triggerSplash" class="trigger-splash" style="display:none;"></div>
 
     <!-- WebRTC PeerJS for Serverless Online Multiplayer -->
-    <script src="peerjs.min.js?v=49"></script>
+    <script src="peerjs.min.js?v=50"></script>
     <script>
         if (typeof Peer === 'undefined') {
             document.write('<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"><\/script>');
         }
     </script>
-    <script src="cards.js?v=49"></script>
-    <script src="engine.js?v=49"></script>
-    <script src="network.js?v=49"></script>
-    <script src="ui.js?v=49"></script>
+    <script src="cards.js?v=50"></script>
+    <script src="engine.js?v=50"></script>
+    <script src="network.js?v=50"></script>
+    <script src="ui.js?v=50"></script>
 </body>
 </html>

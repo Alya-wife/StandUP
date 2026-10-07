@@ -35,6 +35,7 @@ class VanguardUI {
         this.selectedRideSlot = null;
         this.selectedP1DeckKey = null;
         this.selectedP2DeckKey = null;
+        this.activeCrestPopupPlayer = null;
 
         this.initDOM();
         this.bindMenuEvents();
@@ -45,6 +46,16 @@ class VanguardUI {
         window.addEventListener('resize', () => {
             if (this.engine && this.engine.combat) {
                 this.renderAttackArrow();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (this.activeCrestPopupPlayer) {
+                const s1 = document.getElementById('p1_crestSlot');
+                const s2 = document.getElementById('p2_crestSlot');
+                if ((s1 && s1.contains(e.target)) || (s2 && s2.contains(e.target))) return;
+                this.activeCrestPopupPlayer = null;
+                this.renderZones();
             }
         });
     }
@@ -851,6 +862,7 @@ class VanguardUI {
         const p = playerNum === 1 ? this.engine.p1 : this.engine.p2;
         const isOnline = (this.network && this.network.isOnline);
         if (isOnline && this.network.myPlayerId !== p.id) {
+            this.showSplash("Bukan giliranmu!", "cyan");
             return;
         }
 
@@ -865,7 +877,7 @@ class VanguardUI {
         }
 
         if ((p.energy || 0) < 7) {
-            this.showSplash(`Energy tidak cukup untuk EB(7)! (Sisa: ${p.energy || 0}/10)`, "cyan");
+            this.showSplash(`Energy tidak cukup untuk EB(7)! (Sisa: ${p.energy || 0}/10, Butuh: 7)`, "cyan");
             return;
         }
 
@@ -874,6 +886,7 @@ class VanguardUI {
         } else {
             this.engine.activateEnergyGeneratorEB7(p.id);
         }
+        this.showSplash("⚡ ENERGY BLAST 7 -> DRAW 1!", "gold");
         this.renderAll();
     }
 
@@ -895,42 +908,82 @@ class VanguardUI {
             const energyEl = document.getElementById(`${prefix}energyCount`);
             if (energyEl) energyEl.textContent = (p.energy !== undefined ? p.energy : 0);
 
-            // EB(7) Draw Button & Crest Slot Activation
+            // EB(7) Draw Popup Button & Crest Slot Activation
+            const popupEl = document.getElementById(`${prefix}crestPopup`);
             const btnEB7 = document.getElementById(`${prefix}btnEB7`);
             const isOnline = (this.network && this.network.isOnline);
             const isMyTurn = (!isOnline) || (this.network.myPlayerId === p.id);
-            const canUseEB7 = isMyTurn && (this.engine.phase === 'MAIN_PHASE') && (this.engine.activePlayer === p.id) && ((p.energy || 0) >= 7) && (!p.energyGeneratorUsedThisTurn);
-
-            if (btnEB7) {
-                if (canUseEB7) {
-                    btnEB7.style.display = 'block';
-                    btnEB7.onclick = (e) => {
-                        e.stopPropagation();
-                        this.triggerEnergyGeneratorEB7(pNum);
-                    };
-                } else {
-                    btnEB7.style.display = 'none';
-                }
-            }
+            const isMainPhase = (this.engine.phase === 'MAIN_PHASE') && (this.engine.activePlayer === p.id);
+            const hasEnoughEnergy = ((p.energy || 0) >= 7);
+            const notUsedYet = !p.energyGeneratorUsedThisTurn;
+            const canUseEB7 = isMyTurn && isMainPhase && hasEnoughEnergy && notUsedYet;
 
             const crestSlot = document.getElementById(`${prefix}crestSlot`);
             if (crestSlot) {
-                crestSlot.onclick = () => {
-                    if (canUseEB7) {
-                        this.triggerEnergyGeneratorEB7(pNum);
+                if (canUseEB7) {
+                    crestSlot.classList.add('can-eb7');
+                } else {
+                    crestSlot.classList.remove('can-eb7');
+                }
+
+                crestSlot.onclick = (e) => {
+                    e.stopPropagation();
+                    this.inspectCard({
+                        id: 'dz_005',
+                        name: 'Energy Generator',
+                        grade: 0,
+                        power: 0,
+                        shield: 0,
+                        cardType: 'Crest',
+                        image: 'img/Card/dztd01_005.webp',
+                        ability: `[Crest] Energy Counter: [${p.energy || 0}/10].\n• At the beginning of your ride phase, Energy Charge (3) (max 10).\n• [ACT][1/Turn]: [Cost: Energy-Blast 7], Draw 1 kartu.`
+                    });
+
+                    if (this.activeCrestPopupPlayer === pNum) {
+                        this.activeCrestPopupPlayer = null;
                     } else {
-                        this.inspectCard({
-                            id: 'dz_005',
-                            name: 'Energy Generator',
-                            grade: 0,
-                            power: 0,
-                            shield: 0,
-                            cardType: 'Crest',
-                            image: 'img/Card/dztd01_005.webp',
-                            ability: `[Crest] Energy Counter: [${p.energy || 0}/10].\n• At the beginning of your ride phase, Energy Charge (3).\n• [ACT][1/Turn]: [Cost: Energy-Blast 7], Draw 1 kartu.`
-                        });
+                        this.activeCrestPopupPlayer = pNum;
                     }
+                    this.renderZones();
                 };
+            }
+
+            if (popupEl && btnEB7) {
+                if (this.activeCrestPopupPlayer === pNum) {
+                    popupEl.style.display = 'flex';
+                    const isTopRow = (pNum === 2 && this.viewPerspective === 1) || (pNum === 1 && this.viewPerspective === 2);
+                    if (isTopRow) {
+                        popupEl.className = 'crest-action-popup pop-down';
+                    } else {
+                        popupEl.className = 'crest-action-popup pop-up';
+                    }
+
+                    if (canUseEB7) {
+                        btnEB7.className = 'btn-eb7-popup active';
+                        btnEB7.innerHTML = `⚡ <b>[Cost: EB 7]</b> Draw 1 Kartu`;
+                        btnEB7.title = 'Klik untuk membayar 7 Energy dan Draw 1 kartu!';
+                    } else {
+                        btnEB7.className = 'btn-eb7-popup disabled';
+                        let reason = `Energy: ${p.energy || 0}/7`;
+                        if (!hasEnoughEnergy) reason = `Energy: ${p.energy || 0}/7`;
+                        else if (!notUsedYet) reason = 'Sudah Digunakan (1/Turn)';
+                        else if (!isMainPhase) reason = 'Hanya saat Main Phase';
+                        else if (!isMyTurn) reason = 'Bukan Giliranmu';
+                        btnEB7.innerHTML = `⚡ <b>[EB 7]</b> Draw 1 (${reason})`;
+                        btnEB7.title = `Syarat belum terpenuhi: ${reason}`;
+                    }
+
+                    btnEB7.onclick = (e) => {
+                        e.stopPropagation();
+                        if (canUseEB7) {
+                            this.activeCrestPopupPlayer = null;
+                            popupEl.style.display = 'none';
+                        }
+                        this.triggerEnergyGeneratorEB7(pNum);
+                    };
+                } else {
+                    popupEl.style.display = 'none';
+                }
             }
 
             // Order Zone Stack
@@ -1005,16 +1058,29 @@ class VanguardUI {
         if (this.engine.combat && this.engine.combat.guardians && this.engine.combat.guardians.length > 0) {
             gcStack.style.display = 'flex';
             gcStack.innerHTML = '';
-            this.engine.combat.guardians.forEach(card => {
+            this.engine.combat.guardians.forEach((card, idx) => {
+                const wrap = document.createElement('div');
+                wrap.className = 'gc-guard-card-wrap';
+                wrap.style.zIndex = 10 + idx;
+
                 const img = document.createElement('img');
-                img.className = 'gc-guard-card-thumb';
+                img.className = 'gc-guard-card-img';
                 img.src = card.image || 'img/Card/dztd01_002.webp';
                 img.alt = card.name;
-                img.title = `${card.name} (+${card.shield} Shield)`;
-                img.onmouseenter = () => this.inspectCard(card);
-                gcStack.appendChild(img);
+                wrap.appendChild(img);
+
+                const isSentinel = (card.skills && card.skills.includes('sentinel')) || (card.ability && card.ability.includes('[Sentinel]'));
+                const badge = document.createElement('div');
+                badge.className = `gc-guard-shield-badge ${isSentinel ? 'sentinel' : ''}`;
+                badge.textContent = isSentinel ? 'PG (Sentinel)' : `+${(card.shield || 0).toLocaleString()}`;
+                wrap.appendChild(badge);
+
+                wrap.title = `${card.name} (${badge.textContent})`;
+                wrap.onmouseenter = () => this.inspectCard(card);
+                wrap.onclick = () => this.inspectCard(card);
+                gcStack.appendChild(wrap);
             });
-            if (gcSvg) gcSvg.style.opacity = '0.2';
+            if (gcSvg) gcSvg.style.opacity = '0.15';
         } else {
             gcStack.style.display = 'none';
             if (gcSvg) gcSvg.style.opacity = '1';

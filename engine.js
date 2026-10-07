@@ -141,6 +141,19 @@ class VanguardEngine {
             if (crestIndex !== -1) {
                 p.crestZone = p.rideDeck.splice(crestIndex, 1)[0];
                 p.energy = 0;
+            } else {
+                p.crestZone = {
+                    id: 'dz_005',
+                    name: 'Energy Generator',
+                    cardType: 'Crest',
+                    grade: 0,
+                    power: 0,
+                    shield: 0,
+                    image: 'img/Card/dztd01_005.webp',
+                    isCrest: true,
+                    ability: '[Crest] Energy Counter: [0/10]. At the beginning of ride phase, Energy Charge (3) (max 10). [ACT][1/Turn]: [Cost: Energy Blast (7)], draw a card.'
+                };
+                p.energy = 0;
             }
 
             // Set Grade 0 from Ride Deck as First Vanguard on VC (face down initially)

@@ -345,7 +345,7 @@ body {
 /* 3x3 Master CSS Grid Playmat */
 .mat-board-grid {
     width: 960px;
-    height: 525px;
+    height: 550px;
     background: #181514;
     background-image: radial-gradient(circle at 50% 50%, #26211e 0%, #141211 85%);
     border: 2px solid #3d352e;
@@ -353,8 +353,8 @@ body {
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.9), inset 0 0 35px rgba(0, 0, 0, 0.6);
     display: grid;
     grid-template-columns: 180px 1fr 160px;
-    grid-template-rows: 218px 58px 218px;
-    padding: 6px 12px;
+    grid-template-rows: 216px 94px 216px;
+    padding: 8px 12px;
     position: relative;
 }
 
@@ -380,15 +380,21 @@ body {
     z-index: 10;
 }
 .guardian-circle-center {
-    width: 60px;
-    height: 60px;
+    width: 92px;
+    height: 92px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 10;
-    background: rgba(16, 185, 129, 0.05);
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0.02) 75%);
     border-radius: 50%;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.guardian-circle-center:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
 }
 
 .p2-circles-center, .p1-circles-center {
@@ -816,24 +822,106 @@ body {
     transform: scale(1.1);
 }
 
-/* Energy Crest EB(7) Button */
-.btn-eb7 {
-    margin-top: 3px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #000;
-    font-size: 8px;
-    font-weight: 900;
-    padding: 2px 5px;
-    border-radius: 4px;
-    border: 1px solid #fbbf24;
-    cursor: pointer;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
-    animation: pulse-gold 1.5s infinite;
-    letter-spacing: 0.3px;
+/* Energy Crest EB(7) Action Popup & Pulsing State */
+.crest-slot-box.can-eb7 {
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
+    animation: crestReadyPulse 1.8s infinite;
 }
-.btn-eb7:hover {
-    transform: scale(1.08);
+@keyframes crestReadyPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        border-color: #f59e0b;
+    }
+    50% {
+        box-shadow: 0 0 22px rgba(245, 158, 11, 0.95), inset 0 0 8px rgba(245, 158, 11, 0.5);
+        border-color: #fef08a;
+    }
+}
+
+.crest-action-popup {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 250;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+}
+.crest-action-popup.pop-up {
+    bottom: calc(100% + 8px);
+    top: auto;
+    animation: crestPopupSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.crest-action-popup.pop-down {
+    top: calc(100% + 8px);
+    bottom: auto;
+    animation: crestPopupSlideDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes crestPopupSlideUp {
+    0% { opacity: 0; transform: translate(-50%, 6px); }
+    100% { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes crestPopupSlideDown {
+    0% { opacity: 0; transform: translate(-50%, -6px); }
+    100% { opacity: 1; transform: translate(-50%, 0); }
+}
+.crest-action-popup.pop-up::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #fbbf24 transparent transparent transparent;
+}
+.crest-action-popup.pop-down::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent #fbbf24 transparent;
+}
+
+.btn-eb7-popup {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0b0f19;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #fbbf24;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 12px rgba(245, 158, 11, 0.7);
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+.btn-eb7-popup.active:hover {
+    transform: translateY(-2px) scale(1.06);
     background: #fbbf24;
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.95);
+}
+.btn-eb7-popup.disabled {
+    background: rgba(30, 41, 59, 0.94);
+    color: #94a3b8;
+    border-color: #475569;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+}
+.btn-eb7-popup.disabled:hover {
+    background: rgba(51, 65, 85, 0.96);
+    color: #cbd5e1;
+    border-color: #64748b;
 }
 
 /* Order Zone Thumbnail Card */
@@ -1450,20 +1538,57 @@ body.stage-active .overlay-modal,
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
-    z-index: 10;
+    pointer-events: auto;
+    z-index: 25;
 }
-.gc-guard-card-thumb {
-    width: 44px;
-    height: 64px;
-    border-radius: 4px;
-    border: 1.5px solid #10b981;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-    margin-left: -22px;
-    object-fit: cover;
+.gc-guard-card-wrap {
+    position: relative;
+    width: 78px;
+    height: 108px;
+    margin-left: -44px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, z-index 0.2s;
+    flex-shrink: 0;
 }
-.gc-guard-card-thumb:first-child {
+.gc-guard-card-wrap:first-child {
     margin-left: 0;
+}
+.gc-guard-card-wrap:hover {
+    transform: translateY(-12px) scale(1.14);
+    z-index: 60 !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.95), 0 0 20px #10b981;
+}
+.gc-guard-card-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    border: 2px solid #10b981;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85);
+    object-fit: cover;
+    display: block;
+}
+.gc-guard-shield-badge {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 15, 29, 0.92);
+    color: #34d399;
+    border: 1px solid #10b981;
+    font-size: 8.5px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    letter-spacing: 0.3px;
+}
+.gc-guard-shield-badge.sentinel {
+    color: #f43f5e;
+    border-color: #f43f5e;
+    background: rgba(20, 10, 15, 0.94);
 }
 .circle-slot.attacker-selected {
     outline: 2.5px solid #f59e0b;
