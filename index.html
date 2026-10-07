@@ -380,7 +380,9 @@
                     <button class="btn btn-emerald" id="btnGoToAdminFromDeck" style="font-size:11.5px;padding:6px 12px;font-weight:700;">Card Admin</button>
                     <span style="font-weight:800;color:#f59e0b;font-size:15px;">Deck Manager</span>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button class="btn" style="background:#0284c7;color:#fff;font-weight:700;font-size:12px;padding:6px 14px;" id="btnImportDeckJson">Import Deck (.json)</button>
+                    <input type="file" id="fileImportDeck" accept=".json" style="display:none;">
                     <button class="btn btn-primary" id="btnCreateNewDeck">+ Buat Deck Baru</button>
                 </div>
             </header>
@@ -403,6 +405,7 @@
                             <div class="deck-preview-actions">
                                 <button class="btn btn-primary" id="btnSetActiveDeck">Pilih Deck Ini</button>
                                 <button class="btn" style="background:#2563eb;color:#fff;" id="btnEditSelectedDeck">Edit Deck</button>
+                                <button class="btn" style="background:#0284c7;color:#fff;font-weight:700;" id="btnExportSelectedDeck">Export (.json)</button>
                                 <button class="btn btn-red" id="btnDeleteSelectedDeck">Hapus</button>
                             </div>
                         </div>
@@ -446,6 +449,7 @@
                         Main: <b id="statDeckTotal">0</b>/50 | Ride: <b id="statRideTotal">1</b>/5 | Triggers: <b id="statTriggerTotal">0</b>/16 (<span id="statHealTotal">0</span>/4 Heal, <span id="statOverTotal">0</span>/1 Over)
                     </div>
                     <button class="btn btn-primary" id="btnSaveDeck">Simpan Deck</button>
+                    <button class="btn" style="background:#0284c7;color:#fff;font-weight:700;" id="btnExportEditingDeck">Export (.json)</button>
                     <button class="btn btn-red" id="btnClearDeck">Reset</button>
                 </div>
             </header>

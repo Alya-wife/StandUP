@@ -2392,6 +2392,47 @@ class VanguardUI {
             };
         }
 
+        const btnExportSel = document.getElementById('btnExportSelectedDeck');
+        if (btnExportSel) {
+            btnExportSel.onclick = () => {
+                if (!this.selectedDeckKey) return;
+                const decks = getSavedDecks();
+                const d = decks[this.selectedDeckKey];
+                if (d) this.exportDeckToJson(d);
+            };
+        }
+
+        const btnExportEdt = document.getElementById('btnExportEditingDeck');
+        if (btnExportEdt) {
+            btnExportEdt.onclick = () => {
+                if (this.editingDeck) {
+                    const deckToExport = this.compileEditingDeckObject();
+                    this.exportDeckToJson(deckToExport);
+                }
+            };
+        }
+
+        const btnImport = document.getElementById('btnImportDeckJson');
+        const fileImport = document.getElementById('fileImportDeck');
+        if (btnImport && fileImport) {
+            btnImport.onclick = () => fileImport.click();
+            fileImport.onchange = (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        const parsed = JSON.parse(evt.target.result);
+                        this.importDeckFromJson(parsed);
+                    } catch (err) {
+                        alert('Format JSON deck tidak valid: ' + err.message);
+                    }
+                    fileImport.value = '';
+                };
+                reader.readAsText(file);
+            };
+        }
+
         // Catalog Filter Buttons in Deck Editor
         document.querySelectorAll('.catalog-filter-btn').forEach(btn => {
             btn.onclick = () => {
@@ -3074,7 +3115,81 @@ class VanguardUI {
         this.showSplash(`Deck "${savedDeck.name}" berhasil disimpan!`, 'gold');
     }
 
+    compileEditingDeckObject() {
+        if (!this.editingDeck) return null;
+        const nameInput = document.getElementById('inputDeckName');
+        const name = (nameInput ? nameInput.value.trim() : '') || this.editingDeck.name || 'Custom Deck';
+        const r = this.editingDeck.rideDeck || {};
+        const rideDeckIds = [r.g0, r.g1, r.g2, r.g3, r.crest || 'dz_005'].filter(Boolean);
+        return {
+            id: this.editingDeck.id || ('deck_' + Date.now()),
+            name: name,
+            nation: this.editingDeck.nation || 'Dragon Empire',
+            rideDeckIds: rideDeckIds,
+            mainDeckIds: [...(this.editingDeck.mainDeckIds || [])]
+        };
+    }
 
+    exportDeckToJson(deck) {
+        if (!deck) return;
+        const exportData = {
+            id: deck.id,
+            name: deck.name,
+            nation: deck.nation || 'Dragon Empire',
+            rideDeckIds: deck.rideDeckIds || [],
+            mainDeckIds: deck.mainDeckIds || [],
+            exportedAt: new Date().toISOString()
+        };
+        const jsonStr = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const filename = (deck.name || 'vanguard_deck').toLowerCase().replace(/[^a-z0-9_-]/g, '_') + '.json';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.showSplash(`Deck "${deck.name}" berhasil diekspor sebagai ${filename}!`, 'gold');
+    }
+
+    importDeckFromJson(data) {
+        if (!data || typeof data !== 'object') {
+            alert('File JSON tidak valid!');
+            return;
+        }
+        let deckList = [];
+        if (data.id && (data.mainDeckIds || data.rideDeckIds)) {
+            deckList = [data];
+        } else {
+            deckList = Object.values(data).filter(d => d && typeof d === 'object' && d.id);
+        }
+
+        if (deckList.length === 0) {
+            alert('Tidak ditemukan data deck yang valid dalam file JSON!');
+            return;
+        }
+
+        let importedCount = 0;
+        let lastId = null;
+        deckList.forEach(deck => {
+            if (!deck.id) deck.id = 'deck_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            if (!deck.name) deck.name = 'Imported Deck';
+            if (!Array.isArray(deck.rideDeckIds)) deck.rideDeckIds = [];
+            if (!Array.isArray(deck.mainDeckIds)) deck.mainDeckIds = [];
+            saveDeckToStorage(deck);
+            lastId = deck.id;
+            importedCount++;
+        });
+
+        if (lastId) {
+            this.selectedDeckKey = lastId;
+            setActiveDeckId(lastId);
+        }
+        this.renderDeckManager();
+        this.showSplash(`${importedCount} deck berhasil diimpor!`, 'gold');
+    }
 
     getVanguardCrestSVG() {
         return `

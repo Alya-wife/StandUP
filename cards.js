@@ -405,7 +405,40 @@ function createDefaultDecks() {
     };
 }
 
-// LocalStorage Deck Management
+// LocalStorage & Server Deck Management
+async function syncDecksFromServer() {
+    try {
+        const res = await fetch('decks.json?v=' + Date.now());
+        if (res.ok) {
+            const serverDecks = await res.json();
+            if (serverDecks && typeof serverDecks === 'object') {
+                const localDecks = getSavedDecks();
+                let hasChanges = false;
+                for (const id in serverDecks) {
+                    if (!localDecks[id] || JSON.stringify(localDecks[id]) !== JSON.stringify(serverDecks[id])) {
+                        localDecks[id] = serverDecks[id];
+                        hasChanges = true;
+                    }
+                }
+                if (hasChanges) {
+                    localStorage.setItem('vg_custom_decks', JSON.stringify(localDecks));
+                    if (window.gameUI && typeof window.gameUI.renderDeckManager === 'function') {
+                        window.gameUI.renderDeckManager();
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        // Fallback silently if offline or running via file://
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+        syncDecksFromServer();
+    });
+}
+
 function getSavedDecks() {
     const raw = localStorage.getItem('vg_custom_decks');
     if (!raw) {
@@ -431,6 +464,15 @@ function saveDeckToStorage(deck) {
     const decks = getSavedDecks();
     decks[deck.id] = deck;
     localStorage.setItem('vg_custom_decks', JSON.stringify(decks));
+
+    // Auto-sync to localhost save_deck.php if running under Laragon / PHP server
+    try {
+        fetch('save_deck.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(decks)
+        }).catch(() => {});
+    } catch (e) {}
 }
 
 function deleteDeckFromStorage(deckId) {
@@ -438,6 +480,14 @@ function deleteDeckFromStorage(deckId) {
     if (decks[deckId]) {
         delete decks[deckId];
         localStorage.setItem('vg_custom_decks', JSON.stringify(decks));
+
+        try {
+            fetch('save_deck.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(decks)
+            }).catch(() => {});
+        } catch (e) {}
     }
 }
 
