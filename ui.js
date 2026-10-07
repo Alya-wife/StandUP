@@ -198,6 +198,8 @@ class VanguardUI {
 
         if (eventType === 'INIT') {
             this.showDiceRollModal();
+        } else if (eventType === 'DICE_ROLLED') {
+            this.handleDiceRolledEvent(payload);
         } else if (eventType === 'MULLIGAN_START') {
             const pNum = (this.network && this.network.isOnline) ? this.network.myPlayerId : 1;
             this.showMulliganModal(pNum);
@@ -1773,6 +1775,12 @@ class VanguardUI {
         `;
         this.elModal.style.display = 'flex';
 
+        // Jika dadu sudah pernah dilempar sebelumnya (misal sinkronisasi state)
+        if (this.engine && this.engine.diceResult) {
+            this.handleDiceRolledEvent(this.engine.diceResult);
+            return;
+        }
+
         if (isGuest) return;
 
         const btnRoll = document.getElementById('btnDoRollDice');
@@ -1790,43 +1798,134 @@ class VanguardUI {
                 ticks++;
                 if (ticks > 12) {
                     clearInterval(interval);
-                    const res = this.engine.rollDice();
-                    cube1.textContent = res.d1;
-                    cube2.textContent = res.d2;
-
-                    const winnerName = res.winner === 1 ? 'Player 1' : 'Player 2';
-                    const resultMsg = document.getElementById('diceRollResultMsg');
-                    if (resultMsg) {
-                        resultMsg.innerHTML = `<span style="color:#22c55e;">${winnerName} Menang Lemparan Dadu!</span>`;
-                    }
-
-                    const actionsCont = document.getElementById('diceActionsContainer');
-                    if (actionsCont) {
-                        if (isOnline && res.winner === 2) {
-                            actionsCont.innerHTML = `<div style="font-size:12.5px;color:#38bdf8;font-weight:700;"><span class="inline-spinner"></span> Menunggu Player 2 (Guest) memilih urutan giliran...</div>`;
-                        } else {
-                            actionsCont.innerHTML = `
-                                <div style="display:flex;gap:14px;justify-content:center;">
-                                    <button class="btn btn-primary" id="btnChooseFirst">Jalan Pertama (First)</button>
-                                    <button class="btn btn-cyan" id="btnChooseSecond">Jalan Kedua (Second)</button>
-                                </div>
-                            `;
-
-                            document.getElementById('btnChooseFirst').onclick = () => {
-                                this.elModal.style.display = 'none';
-                                this.engine.chooseTurnOrder(res.winner);
-                            };
-
-                            document.getElementById('btnChooseSecond').onclick = () => {
-                                this.elModal.style.display = 'none';
-                                const other = res.winner === 1 ? 2 : 1;
-                                this.engine.chooseTurnOrder(other);
-                            };
-                        }
-                    }
+                    this.engine.rollDice();
                 }
             }, 70);
         };
+    }
+
+    handleDiceRolledEvent(payload) {
+        const res = payload || (this.engine && this.engine.diceResult);
+        if (!res) return;
+
+        let cube1 = document.getElementById('cubeP1');
+        let cube2 = document.getElementById('cubeP2');
+        if (!cube1 || !cube2) {
+            this.showDiceRollModal();
+            cube1 = document.getElementById('cubeP1');
+            cube2 = document.getElementById('cubeP2');
+        }
+
+        const isOnline = !!(this.network && this.network.isOnline);
+        const myPlayerId = isOnline ? (this.network.myPlayerId || 1) : 1;
+        const winnerName = res.winner === 1 ? 'Player 1' : 'Player 2';
+
+        const finalize = () => {
+            if (cube1) cube1.textContent = res.d1;
+            if (cube2) cube2.textContent = res.d2;
+
+            const resultMsg = document.getElementById('diceRollResultMsg');
+            if (resultMsg) {
+                resultMsg.innerHTML = `<span style="color:#22c55e;">${winnerName} Menang Lemparan Dadu!</span>`;
+            }
+
+            const actionsCont = document.getElementById('diceActionsContainer');
+            if (actionsCont) {
+                if (isOnline) {
+                    if (res.winner === myPlayerId) {
+                        // Pemain ini yang menang lemparan dadu
+                        actionsCont.innerHTML = `
+                            <div style="font-size:12.5px;color:#facc15;font-weight:700;margin-bottom:12px;">
+                                Kamu memenangkan lemparan dadu! Tentukan urutan giliranmu:
+                            </div>
+                            <div style="display:flex;gap:14px;justify-content:center;">
+                                <button class="btn btn-primary" id="btnChooseFirst">Jalan Pertama (First)</button>
+                                <button class="btn btn-cyan" id="btnChooseSecond">Jalan Kedua (Second)</button>
+                            </div>
+                        `;
+
+                        const btnFirst = document.getElementById('btnChooseFirst');
+                        const btnSecond = document.getElementById('btnChooseSecond');
+
+                        if (btnFirst) {
+                            btnFirst.onclick = () => {
+                                this.elModal.style.display = 'none';
+                                if (this.network.isHost) {
+                                    this.engine.chooseTurnOrder(myPlayerId);
+                                } else {
+                                    this.dispatchAction('CHOOSE_TURN_ORDER', { chosenPlayerNum: myPlayerId });
+                                }
+                            };
+                        }
+
+                        if (btnSecond) {
+                            btnSecond.onclick = () => {
+                                this.elModal.style.display = 'none';
+                                const otherPlayerId = myPlayerId === 1 ? 2 : 1;
+                                if (this.network.isHost) {
+                                    this.engine.chooseTurnOrder(otherPlayerId);
+                                } else {
+                                    this.dispatchAction('CHOOSE_TURN_ORDER', { chosenPlayerNum: otherPlayerId });
+                                }
+                            };
+                        }
+                    } else {
+                        // Lawan yang memenangkan lemparan dadu
+                        const waitingFor = res.winner === 1 ? 'Player 1 (Host)' : 'Player 2 (Guest)';
+                        actionsCont.innerHTML = `
+                            <div style="font-size:12.5px;color:#38bdf8;font-weight:700;">
+                                <span class="inline-spinner"></span> Menunggu ${waitingFor} memilih urutan giliran...
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Sandbox offline mode
+                    actionsCont.innerHTML = `
+                        <div style="font-size:12.5px;color:#facc15;font-weight:700;margin-bottom:12px;">
+                            ${winnerName} memenangkan lemparan dadu! Pilih urutan giliran:
+                        </div>
+                        <div style="display:flex;gap:14px;justify-content:center;">
+                            <button class="btn btn-primary" id="btnChooseFirst">Jalan Pertama (First)</button>
+                            <button class="btn btn-cyan" id="btnChooseSecond">Jalan Kedua (Second)</button>
+                        </div>
+                    `;
+
+                    const btnFirst = document.getElementById('btnChooseFirst');
+                    const btnSecond = document.getElementById('btnChooseSecond');
+
+                    if (btnFirst) {
+                        btnFirst.onclick = () => {
+                            this.elModal.style.display = 'none';
+                            this.engine.chooseTurnOrder(res.winner);
+                        };
+                    }
+
+                    if (btnSecond) {
+                        btnSecond.onclick = () => {
+                            this.elModal.style.display = 'none';
+                            const other = res.winner === 1 ? 2 : 1;
+                            this.engine.chooseTurnOrder(other);
+                        };
+                    }
+                }
+            }
+        };
+
+        // Jika dadu masih bertanda tanya (misal pada Guest), tampilkan animasi lemparan singkat
+        if (cube1 && cube2 && (cube1.textContent === '?' || cube2.textContent === '?')) {
+            let ticks = 0;
+            const interval = setInterval(() => {
+                cube1.textContent = Math.floor(Math.random() * 6) + 1;
+                cube2.textContent = Math.floor(Math.random() * 6) + 1;
+                ticks++;
+                if (ticks > 8) {
+                    clearInterval(interval);
+                    finalize();
+                }
+            }, 60);
+        } else {
+            finalize();
+        }
     }
 
     
@@ -3605,6 +3704,7 @@ class VanguardUI {
                 this.engine.performMulligan(2, payload.indices || []);
                 break;
             case 'CHOOSE_TURN_ORDER':
+                this.elModal.style.display = 'none';
                 this.engine.chooseTurnOrder(payload.chosenPlayerNum);
                 break;
             case 'PHASE_BUTTON':
