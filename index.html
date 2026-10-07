@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardfight!! Vanguard overDress Automated Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=34">
+</head>
+<body>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: MAIN MENU                                        -->
+    <!-- ======================================================== -->
+    <div id="viewMainMenu" class="view-container active">
+        <div class="menu-hero-bg"></div>
+        <div class="menu-content-card">
+            <div class="logo-wrapper">
+                <span class="game-sub-title">STANDARD D-SERIES SIMULATOR</span>
+                <h1 class="game-main-title">CARDFIGHT!!<br><span>VANGUARD</span></h1>
+                <div class="rules-badge">Rule Set: overDress / DZ Standard</div>
+            </div>
+
+            <div class="menu-actions-grid">
+                <!-- 1. Create Room -->
+                <div class="menu-action-card" id="menuBtnCreateRoom">
+                    <div class="menu-card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/><path d="M5 20h14"/></svg>
+                    </div>
+                    <div class="menu-card-title">Create Room</div>
+                    <div class="menu-card-desc">Buat room baru dan dapatkan Room ID untuk bertanding secara online P2P.</div>
+                </div>
+
+                <!-- 2. Enter Room -->
+                <div class="menu-action-card" id="menuBtnEnterRoom">
+                    <div class="menu-card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8l4 4-4 4"/><path d="M3 12h15"/><path d="M21 3v18"/></svg>
+                    </div>
+                    <div class="menu-card-title">Enter Room</div>
+                    <div class="menu-card-desc">Masukkan Room ID temanmu untuk masuk dan bertanding bersama.</div>
+                </div>
+
+                <!-- 3. Deck Builder & Manager -->
+                <div class="menu-action-card" id="menuBtnDeck">
+                    <div class="menu-card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="12" height="16" rx="2"/><path d="M8 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2"/></svg>
+                    </div>
+                    <div class="menu-card-title">Deck Builder</div>
+                    <div class="menu-card-desc">Buat deck kustom baru, edit, dan kelola daftar deck yang sudah dibuat.</div>
+                </div>
+
+                <!-- 4. Test Room (Solo) -->
+                <div class="menu-action-card" id="menuBtnTestRoom">
+                    <div class="menu-card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                    </div>
+                    <div class="menu-card-title">Test Room (Solo)</div>
+                    <div class="menu-card-desc">Uji coba simulasi otomatis seorang diri dengan mengontrol kedua pemain.</div>
+                </div>
+
+                <!-- 5. Card Manager (Admin CRUD) -->
+                <div class="menu-action-card" id="menuBtnAdminCards">
+                    <div class="menu-card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                    </div>
+                    <div class="menu-card-title">Card Manager (Admin)</div>
+                    <div class="menu-card-desc">CRUD Database kartu: Tambah kartu baru, ubah stats/gambar, dan koding efek kartu.</div>
+                </div>
+            </div>
+
+            <div class="quick-status-row">
+                <span class="status-indicator"></span>
+                <span>Serverless P2P WebRTC Ready (Zero Backend Database)</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: GAMEPLAY STAGE (3 COLUMNS)                       -->
+    <!-- ======================================================== -->
+    <div id="viewGameStage" class="view-container">
+        
+        <!-- Top Control Bar -->
+        <header class="app-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <button class="btn" id="btnBackToMenu">← Main Menu</button>
+                <button class="btn btn-emerald" id="btnGoToAdminFromStage" style="font-size:11.5px;padding:6px 12px;font-weight:700;">Card Admin</button>
+                <div class="app-brand-title">VG overDress</div>
+            </div>
+
+            <!-- Current Phase Badges -->
+            <div class="phase-track-bar" id="phaseTrackBar">
+                <span class="phase-pill" id="phase_STAND">STAND</span>
+                <span class="phase-pill" id="phase_DRAW">DRAW</span>
+                <span class="phase-pill" id="phase_RIDE">RIDE</span>
+                <span class="phase-pill" id="phase_MAIN">MAIN</span>
+                <span class="phase-pill" id="phase_BATTLE">BATTLE</span>
+                <span class="phase-pill" id="phase_END">END</span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="turn-owner-badge" id="turnOwnerBadge">Turn 1: Player 1</div>
+                <button class="btn btn-primary" id="btnActionPrimary">End Main Phase</button>
+                <button class="btn btn-red" id="btnEndTurn">End Turn</button>
+                <button class="btn btn-sm btn-cyan" id="btnToggleAutoPov" title="Beralih sudut pandang POV otomatis saat ganti giliran atau bertahan">Auto POV: ON</button>
+                <button class="btn" id="btnSwitchView">POV: P1</button>
+                <button class="btn" id="btnRestart">Restart</button>
+            </div>
+        </header>
+
+        <!-- Main 3-Column Gameplay Stage -->
+        <main class="game-stage-3col">
+
+            <!-- ================================================== -->
+            <!-- COLUMN 1: LEFT SIDEBAR (50% Log + 50% Chatroom)    -->
+            <!-- ================================================== -->
+            <aside class="sidebar-left-col">
+                
+                <!-- Battle Log (Top 50%) -->
+                <section class="log-section-pane">
+                    <div class="panel-header">
+                        <span>BATTLE LOG</span>
+                        <small style="color:#64748b;font-weight:600;">Live Events</small>
+                    </div>
+                    <div class="log-content-box" id="battleLogContainer">
+                        <!-- Log messages inserted dynamically -->
+                    </div>
+                </section>
+
+                <!-- Chatroom (Bottom 50%) -->
+                <section class="chat-section-pane">
+                    <div class="panel-header">
+                        <span>CHATROOM</span>
+                        <small style="color:#10b981;font-weight:700;">Online</small>
+                    </div>
+                    <div class="chat-messages-box" id="chatMessagesContainer">
+                        <div class="chat-system-msg">Selamat datang di Cardfight!! Vanguard overDress Simulator!</div>
+                    </div>
+                    <form class="chat-input-bar" id="chatForm">
+                        <input type="text" id="chatInput" placeholder="Ketik pesan..." autocomplete="off">
+                        <button type="submit" class="btn btn-primary" style="padding:6px 14px;">Kirim</button>
+                    </form>
+                </section>
+
+            </aside>
+
+
+            <!-- ================================================== -->
+            <!-- COLUMN 2: CENTER PLAYMAT (Opponent Hand - Mat - Hand)-->
+            <!-- ================================================== -->
+            <section class="playmat-center-col">
+                <!-- Floating In-Game Card Reveal HUD (Drive & Damage Check 1-by-1) -->
+                <div id="inGameCardRevealHud" class="ingame-reveal-hud" style="display:none;"></div>
+                
+                <!-- Opponent Hand Tray (Top) -->
+                <div class="opp-hand-tray">
+                    <div class="opp-hand-label" id="oppHandLabel">OPPONENT HAND (<span id="oppHandCount">5</span>)</div>
+                    <div class="opp-hand-cards" id="oppHandCardsContainer"></div>
+                </div>
+
+                <!-- Playmat Board: 3x3 Master CSS Grid -->
+                <div class="mat-board-grid" id="matBoardGrid">
+                    <!-- Dynamic Combat Attack Arrow SVG Layer -->
+                    <svg id="combatAttackArrowSvg" class="combat-attack-arrow-svg" style="display:none;"></svg>
+
+                    <!-- Compact Non-Intrusive Combat Guard Bar (Top Edge) -->
+                    <div class="combat-guard-banner" id="combatGuardBanner" style="display:none;"></div>
+                    
+                    <!-- ROW 1, COL 1: Opponent Left Side (Energy Top-Left, Order Top-Right, Damage Below) -->
+                    <div class="grid-cell p2-side-left side-zone-left">
+                        <div class="energy-order-top-row">
+                            <!-- Energy Counter (Crest Zone) on Left -->
+                            <div class="crest-slot-box" id="p2_crestSlot" title="Energy Generator [Crest]">
+                                <div class="crest-header-label">CREST</div>
+                                <div class="crest-card-thumb">
+                                    <img src="img/Card/dztd01_005.webp" alt="Energy Generator" id="p2_crestImg">
+                                </div>
+                                <div class="energy-badge">
+                                    <span class="energy-bolt" style="font-size:9.5px;font-weight:900;">EC</span>
+                                    <span class="energy-val" id="p2_energyCount">0</span><span class="energy-max">/10</span>
+                                </div>
+                            </div>
+                            <!-- Order Zone on Right of Energy Counter -->
+                            <div class="order-slot-box" id="p2_orderSlot" title="Order Zone">
+                                <span class="order-slot-label">ORDER</span>
+                                <div class="order-cards-stack" id="p2_orderCards"></div>
+                            </div>
+                        </div>
+                        <!-- Damage Zone Underneath Energy Counter -->
+                        <div class="damage-strip-vertical" id="p2_damageContainer">
+                            <span class="damage-strip-title">DMG (<span id="p2_damageNum">0</span>/6)</span>
+                            <div class="damage-cards-stack" id="p2_damageStack"></div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 1, COL 2: Opponent Circles -->
+                    <div class="grid-cell p2-circles-center">
+                        <!-- P2 Back Row -->
+                        <div class="circles-row">
+                            <div class="circle-slot rc" id="p2_rc_bl"></div>
+                            <div class="circle-slot rc" id="p2_rc_bc"></div>
+                            <div class="circle-slot rc" id="p2_rc_br"></div>
+                        </div>
+                        <!-- P2 Front Row -->
+                        <div class="circles-row">
+                            <div class="circle-slot rc" id="p2_rc_fl"></div>
+                            <div class="circle-slot vc" id="p2_vc"></div>
+                            <div class="circle-slot rc" id="p2_rc_fr"></div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 1, COL 3: Opponent Right Side (Deck Top, Drop Below) -->
+                    <div class="grid-cell p2-side-right side-zone-right">
+                        <div class="deck-slot-box">
+                            <div class="deck-count-label" id="p2_deckCount">Deck: 50</div>
+                            <div class="vg-deck-back">VG</div>
+                        </div>
+                        <div class="drop-slot-box" id="p2_dropSlot" title="Klik untuk melihat Drop Zone Player 2">
+                            <div class="drop-empty-label" id="p2_dropEmpty">
+                                <span>DROP</span>
+                                <span id="p2_dropCount" style="color:#f59e0b;font-weight:800;">0</span>
+                            </div>
+                            <div class="drop-top-card-container" id="p2_dropCardContainer" style="display:none;">
+                                <img src="" id="p2_dropTopImg" class="drop-top-img" alt="Top Drop Card">
+                                <span class="drop-count-badge" id="p2_dropBadge">0</span>
+                            </div>
+                        </div>
+                        <button class="btn-bind">Bind (<span id="p2_bindCount">0</span>)</button>
+                    </div>
+
+
+                    <!-- ROW 2, COL 1: Center Left Divider -->
+                    <div class="grid-cell center-divider-cell">
+                        <div class="h-divider-line"></div>
+                    </div>
+
+                    <!-- ROW 2, COL 2: Center Guardian Circle (GC) Row -->
+                    <div class="grid-cell center-gc-cell">
+                        <div class="h-divider-line"></div>
+                        <div class="guardian-circle-center" id="circleGC">
+                            <svg class="crest-svg" id="circleGCSvg" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="44" stroke="#10b981" stroke-width="2.5" fill="rgba(16, 185, 129, 0.14)" stroke-dasharray="4 2" />
+                                <circle cx="50" cy="50" r="32" stroke="#10b981" stroke-width="1.5" fill="none" />
+                                <path d="M50 15 L50 85 M15 50 L85 50" stroke="#10b981" stroke-width="1" opacity="0.4" />
+                                <text x="50" y="58" font-size="26" font-weight="900" fill="#10b981" text-anchor="middle" font-family="'Outfit', sans-serif">G</text>
+                            </svg>
+                            <div class="gc-guardians-stack" id="gcGuardiansStack" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 2, COL 3: Center Right Divider -->
+                    <div class="grid-cell center-divider-cell">
+                        <div class="h-divider-line"></div>
+                    </div>
+
+
+                    <!-- ROW 3, COL 1: Player 1 Left Side (Energy Top-Left, Order Top-Right, Damage Below) -->
+                    <div class="grid-cell p1-side-left side-zone-left">
+                        <div class="energy-order-top-row">
+                            <!-- Energy Counter (Crest Zone) on Left -->
+                            <div class="crest-slot-box" id="p1_crestSlot" title="Energy Generator [Crest]">
+                                <div class="crest-header-label">CREST</div>
+                                <div class="crest-card-thumb">
+                                    <img src="img/Card/dztd01_005.webp" alt="Energy Generator" id="p1_crestImg">
+                                </div>
+                                <div class="energy-badge">
+                                    <span class="energy-bolt" style="font-size:9.5px;font-weight:900;">EC</span>
+                                    <span class="energy-val" id="p1_energyCount">0</span><span class="energy-max">/10</span>
+                                </div>
+                            </div>
+                            <!-- Order Zone on Right of Energy Counter -->
+                            <div class="order-slot-box" id="p1_orderSlot" title="Order Zone">
+                                <span class="order-slot-label">ORDER</span>
+                                <div class="order-cards-stack" id="p1_orderCards"></div>
+                            </div>
+                        </div>
+                        <!-- Damage Zone Underneath Energy Counter -->
+                        <div class="damage-strip-vertical" id="p1_damageContainer">
+                            <span class="damage-strip-title">DMG (<span id="p1_damageNum">0</span>/6)</span>
+                            <div class="damage-cards-stack" id="p1_damageStack"></div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 3, COL 2: Player 1 Circles -->
+                    <div class="grid-cell p1-circles-center">
+                        <!-- P1 Front Row -->
+                        <div class="circles-row">
+                            <div class="circle-slot rc" id="p1_rc_fl"></div>
+                            <div class="circle-slot vc" id="p1_vc"></div>
+                            <div class="circle-slot rc" id="p1_rc_fr"></div>
+                        </div>
+                        <!-- P1 Back Row -->
+                        <div class="circles-row">
+                            <div class="circle-slot rc" id="p1_rc_bl"></div>
+                            <div class="circle-slot rc" id="p1_rc_bc"></div>
+                            <div class="circle-slot rc" id="p1_rc_br"></div>
+                        </div>
+                    </div>
+
+                    <!-- ROW 3, COL 3: Player 1 Right Side (Deck Top, Drop Below) -->
+                    <div class="grid-cell p1-side-right side-zone-right">
+                        <div class="deck-slot-box">
+                            <div class="deck-count-label" id="p1_deckCount">Deck: 50</div>
+                            <div class="vg-deck-back">VG</div>
+                        </div>
+                        <div class="drop-slot-box" id="p1_dropSlot" title="Klik untuk melihat Drop Zone Player 1">
+                            <div class="drop-empty-label" id="p1_dropEmpty">
+                                <span>DROP</span>
+                                <span id="p1_dropCount" style="color:#f59e0b;font-weight:800;">0</span>
+                            </div>
+                            <div class="drop-top-card-container" id="p1_dropCardContainer" style="display:none;">
+                                <img src="" id="p1_dropTopImg" class="drop-top-img" alt="Top Drop Card">
+                                <span class="drop-count-badge" id="p1_dropBadge">0</span>
+                            </div>
+                        </div>
+                        <button class="btn-bind">Bind (<span id="p1_bindCount">0</span>)</button>
+                    </div>
+
+                </div>
+
+                <!-- Player Hand Tray (Bottom) -->
+                <div class="player-hand-tray">
+                    <div class="player-hand-label">YOUR HAND (<span id="p1_handCount">5</span>)</div>
+                    <div class="player-hand-cards" id="p1HandCardsContainer"></div>
+                </div>
+
+            </section>
+
+
+            <!-- ================================================== -->
+            <!-- COLUMN 3: RIGHT SIDEBAR (Card Inspector)           -->
+            <!-- ================================================== -->
+            <aside class="sidebar-right-col" id="cardInspectorCol">
+                
+                <div class="card-inspector-art-container">
+                    <img src="img/Card/dztd01_002.webp" alt="Selected Card Art" class="card-inspector-art" id="inspectorCardArt">
+                </div>
+
+                <div class="card-inspector-details">
+                    <h3 class="inspector-card-name" id="inspectorCardName">Blazing War Dragon, Varga Dragres</h3>
+                    <div class="inspector-card-meta">
+                        <span class="badge-tag tag-type" id="inspectorCardType">[Unit] Dragon Empire</span>
+                    </div>
+
+                    <div class="inspector-stats-row">
+                        <span class="stat-pill-grade" id="inspectorCardGrade">Grade 3</span>
+                        <span class="stat-pill-power" id="inspectorCardPower">Power 13,000</span>
+                        <span class="stat-pill-crit" id="inspectorCardCrit">Crit 1</span>
+                    </div>
+                    <div class="inspector-shield-row" id="inspectorCardShield">Shield: -</div>
+
+                    <!-- Abilities Text Box -->
+                    <div class="inspector-abilities-container">
+                        <div class="abilities-header">CARD EFFECTS / SKILLS</div>
+                        <div class="abilities-text-box" id="inspectorCardAbilities">
+                            <!-- Styled text badges -->
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
+        </main>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: DECK BUILDER & MANAGER                           -->
+    <!-- ======================================================== -->
+    <div id="viewDeckBuilder" class="view-container">
+        
+        <!-- MODE 1: DECK MANAGER (Daftar Deck + Susunan Preview) -->
+        <div id="deckManagerView" class="deck-mode-view">
+            <header class="app-header">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="btn" id="btnDeckBuilderBack">← Main Menu</button>
+                    <button class="btn btn-emerald" id="btnGoToAdminFromDeck" style="font-size:11.5px;padding:6px 12px;font-weight:700;">Card Admin</button>
+                    <span style="font-weight:800;color:#f59e0b;font-size:15px;">Deck Manager</span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-primary" id="btnCreateNewDeck">+ Buat Deck Baru</button>
+                </div>
+            </header>
+
+            <div class="deck-manager-body">
+                <!-- Left: List of Saved Decks -->
+                <div class="saved-decks-list-col">
+                    <div class="panel-header">DAFTAR DECK TERSIMPAN</div>
+                    <div class="saved-decks-container" id="savedDecksContainer"></div>
+                </div>
+
+                <!-- Right: Susunan Deck Preview -->
+                <div class="deck-preview-col" id="deckPreviewCol">
+                    <div class="deck-preview-header">
+                        <div class="deck-preview-title-row">
+                            <div>
+                                <h2 class="deck-preview-name" id="previewDeckName">Pilih Deck</h2>
+                                <div class="deck-preview-nation" id="previewDeckNation">-</div>
+                            </div>
+                            <div class="deck-preview-actions">
+                                <button class="btn btn-primary" id="btnSetActiveDeck">Pilih Deck Ini</button>
+                                <button class="btn" style="background:#2563eb;color:#fff;" id="btnEditSelectedDeck">Edit Deck</button>
+                                <button class="btn btn-red" id="btnDeleteSelectedDeck">Hapus</button>
+                            </div>
+                        </div>
+                        <div class="preview-stats-bar" id="previewStatsBar"></div>
+                    </div>
+
+                    <!-- Ride Deck Preview (5 cards) -->
+                    <div class="preview-section">
+                        <div class="preview-section-title">RIDE DECK (5 KARTU)</div>
+                        <div class="preview-ride-deck-row" id="previewRideDeckRow"></div>
+                    </div>
+
+                    <!-- Main Deck Preview (50 cards) -->
+                    <div class="preview-section" style="flex:1;">
+                        <div class="preview-section-title">MAIN DECK (50 KARTU)</div>
+                        <div class="preview-main-deck-grid" id="previewMainDeckGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODE 2: DECK BUILDER / PENYUSUNAN DECK (3 Kolom: Inspector - Catalog - Deck Slots) -->
+        <div id="deckEditorView" class="deck-mode-view" style="display:none;">
+            <header class="app-header">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="btn" id="btnCancelDeckEdit">← Batal</button>
+                    <span style="font-weight:800;color:#f59e0b;font-size:15px;">Penyusunan Deck</span>
+                    <input type="text" id="inputDeckName" placeholder="Nama Deck..." class="deck-name-input">
+                    <select id="selectDeckNation" class="deck-nation-select">
+                        <option value="Dragon Empire">Dragon Empire</option>
+                        <option value="Keter Sanctuary">Keter Sanctuary</option>
+                        <option value="Brandt Gate">Brandt Gate</option>
+                        <option value="Dark States">Dark States</option>
+                        <option value="Stoicheia">Stoicheia</option>
+                        <option value="Lyrical Monasterio">Lyrical Monasterio</option>
+                        <option value="Cray Elemental">Cray Elemental</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="deck-stats-pill">
+                        Main: <b id="statDeckTotal">0</b>/50 | Ride: <b id="statRideTotal">1</b>/5 | Triggers: <b id="statTriggerTotal">0</b>/16 (<span id="statHealTotal">0</span>/4 Heal, <span id="statOverTotal">0</span>/1 Over)
+                    </div>
+                    <button class="btn btn-primary" id="btnSaveDeck">Simpan Deck</button>
+                    <button class="btn btn-red" id="btnClearDeck">Reset</button>
+                </div>
+            </header>
+
+            <div class="deck-builder-3col">
+                <!-- Column 1 (Left): Card Detail Inspector -->
+                <div class="builder-inspector-col">
+                    <div class="panel-header">DETAIL KARTU</div>
+                    <div class="builder-inspector-body">
+                        <div class="builder-inspector-art-wrap">
+                            <img src="img/Card/dztd01_005.webp" alt="Card Preview" id="builderCardArt" class="builder-inspector-art">
+                        </div>
+                        <div class="inspector-meta-box">
+                            <h3 class="inspector-card-name" id="builderCardName">Energy Generator</h3>
+                            <div class="inspector-badges-row" id="builderCardBadges">
+                                <span class="badge-tag tag-type">[Crest] Dragon Empire</span>
+                            </div>
+                            <div class="inspector-stats-row" id="builderCardStats">
+                                <span class="stat-pill-grade">Grade 0</span>
+                            </div>
+                            <div class="inspector-abilities-box" id="builderCardAbilities">
+                                [Crest] At the beginning of your ride phase, Energy Charge (3).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2 (Center): Catalog Cards to pick from -->
+                <div class="builder-catalog-col">
+                    <div class="catalog-header-bar">
+                        <div class="panel-header" style="border:none;margin:0;padding:0;">KATALOG KARTU (Klik untuk Menambah)</div>
+                        <div class="catalog-filters-row">
+                            <button class="catalog-filter-btn active" data-filter="all">Semua</button>
+                            <button class="catalog-filter-btn" data-filter="g4">G4</button>
+                            <button class="catalog-filter-btn" data-filter="g3">G3</button>
+                            <button class="catalog-filter-btn" data-filter="g2">G2</button>
+                            <button class="catalog-filter-btn" data-filter="g1">G1</button>
+                            <button class="catalog-filter-btn" data-filter="g0">G0</button>
+                            <button class="catalog-filter-btn" data-filter="trigger">Trigger</button>
+                            <button class="catalog-filter-btn" data-filter="order">Order</button>
+                        </div>
+                    </div>
+                    <div class="builder-catalog-grid" id="builderCatalogGrid"></div>
+                </div>
+
+                <!-- Column 3 (Right): Deck Slots (Ride Deck & Main Deck) -->
+                <div class="builder-deck-col">
+                    <!-- Ride Deck Section -->
+                    <!-- Ride Deck Section -->
+                    <div class="builder-pane-sub-header">
+                        <span>RIDE DECK (1x G0, 1x G1, 1x G2, 1x G3, Crest)</span>
+                        <small id="builderRideHeaderHint" style="color:#f59e0b;font-size:11px;">Klik slot untuk memilih kartu</small>
+                    </div>
+                    <div class="ride-deck-slots-grid" id="builderRideDeckSlots">
+                        <!-- 5 explicit slots -->
+                        <div class="ride-slot-box" data-slot="g0" id="slotRideG0">
+                            <span class="slot-badge">G0 RIDE</span>
+                            <div class="slot-content empty">+ G0 Starter</div>
+                        </div>
+                        <div class="ride-slot-box" data-slot="g1" id="slotRideG1">
+                            <span class="slot-badge">G1 RIDE</span>
+                            <div class="slot-content empty">+ G1 Unit</div>
+                        </div>
+                        <div class="ride-slot-box" data-slot="g2" id="slotRideG2">
+                            <span class="slot-badge">G2 RIDE</span>
+                            <div class="slot-content empty">+ G2 Unit</div>
+                        </div>
+                        <div class="ride-slot-box" data-slot="g3" id="slotRideG3">
+                            <span class="slot-badge">G3 RIDE</span>
+                            <div class="slot-content empty">+ G3 Unit</div>
+                        </div>
+                        <div class="ride-slot-box ride-slot-locked" data-slot="crest" id="slotRideCrest" title="Energy Generator Crest (Terkunci Otomatis)">
+                            <span class="slot-badge slot-badge-crest">CREST</span>
+                            <div class="slot-content filled">
+                                <img src="img/Card/dztd01_005.webp" alt="Energy Generator">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Deck Section -->
+                    <div class="builder-pane-sub-header" style="margin-top:14px;">
+                        <span>MAIN DECK (50 KARTU) - Klik kartu untuk mengurangi</span>
+                    </div>
+                    <div class="builder-main-deck-container" id="builderMainDeckContainer">
+                        <div class="main-empty-placeholder" id="mainDeckEmptyNotice">
+                            Deck masih kosong. Klik kartu di katalog untuk memasukkannya ke dalam main deck.
+                        </div>
+
+                        <!-- Section 1: Normal Unit & Order -->
+                        <div id="sectionNormalUnits" style="display:none;margin-bottom:14px;">
+                            <div class="deck-section-divider">
+                                <div class="deck-section-title">
+                                    <span>NORMAL UNIT & ORDER</span>
+                                    <span class="deck-section-count" id="countNormalUnits">0 / 34</span>
+                                </div>
+                            </div>
+                            <div class="builder-main-deck-grid" id="builderNormalDeckGrid"></div>
+                        </div>
+
+                        <!-- Section 2: Trigger Unit -->
+                        <div id="sectionTriggerUnits" style="display:none;">
+                            <div class="deck-section-divider trigger-divider">
+                                <div class="deck-section-title trigger-title">
+                                    <span>TRIGGER UNIT</span>
+                                    <span class="deck-section-count" id="countTriggerUnits">0 / 16</span>
+                                </div>
+                                <div class="deck-trigger-pill-breakdown" id="deckTriggerPillBreakdown"></div>
+                            </div>
+                            <div class="builder-main-deck-grid" id="builderTriggerDeckGrid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: CARD DATABASE & EFFECT MANAGER (ADMIN CRUD)      -->
+    <!-- ======================================================== -->
+    <div id="viewCardAdmin" class="view-container">
+        <!-- Top Control Bar -->
+        <header class="app-header">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <button class="btn" id="btnAdminBackToMenu">← Main Menu</button>
+                <div class="app-brand-title">Card Manager (Admin)</div>
+                <span class="badge-tag tag-type" id="adminCardsTotalBadge" style="margin-left:6px;">Total: 27 Kartu</span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;">
+                <button class="btn btn-emerald" id="btnAdminAddNewCard">+ Tambah Kartu Baru</button>
+                <button class="btn btn-cyan" id="btnAdminImport">Import JSON</button>
+                <button class="btn btn-amber" id="btnAdminExport">Export JSON</button>
+                <button class="btn btn-red" id="btnAdminResetDefault">Reset Default</button>
+            </div>
+        </header>
+
+        <!-- Admin Studio 2-Column Body -->
+        <div class="admin-studio-layout">
+            <!-- Left Column: Catalog & Filters -->
+            <div class="admin-catalog-col">
+                <div class="admin-search-bar">
+                    <input type="text" id="adminCardSearchInput" class="admin-input" placeholder="Cari nama atau ID kartu..." autocomplete="off">
+                </div>
+
+                <div class="admin-filter-row">
+                    <div class="admin-filter-group" id="adminNationFilterGroup">
+                        <button class="filter-chip active" data-nation="all">Semua Nation</button>
+                        <button class="filter-chip" data-nation="Dragon Empire">Dragon Empire</button>
+                        <button class="filter-chip" data-nation="Keter Sanctuary">Keter Sanctuary</button>
+                        <button class="filter-chip" data-nation="Brandt Gate">Brandt Gate</button>
+                        <button class="filter-chip" data-nation="Dark States">Dark States</button>
+                        <button class="filter-chip" data-nation="Stoicheia">Stoicheia</button>
+                        <button class="filter-chip" data-nation="Lyrical Monasterio">Lyrical</button>
+                        <button class="filter-chip" data-nation="Cray Elemental">Cray Elemental</button>
+                    </div>
+                </div>
+
+                <div class="admin-filter-row" style="margin-top:6px;">
+                    <div class="admin-filter-group" id="adminCategoryFilterGroup">
+                        <button class="filter-chip active" data-category="all">Semua Kategori</button>
+                        <button class="filter-chip" data-category="Normal Unit">Normal Unit</button>
+                        <button class="filter-chip" data-category="Trigger Unit">Trigger Unit</button>
+                        <button class="filter-chip" data-category="Normal Order">Normal Order</button>
+                        <button class="filter-chip" data-category="Set Order">Set Order</button>
+                        <button class="filter-chip" data-category="Blitz Order">Blitz Order</button>
+                        <button class="filter-chip" data-category="Token">Token</button>
+                        <button class="filter-chip" data-category="Crest">Crest</button>
+                    </div>
+                </div>
+
+                <div class="admin-filter-row" style="margin-top:6px;">
+                    <div class="admin-filter-group" id="adminGradeFilterGroup">
+                        <button class="filter-chip active" data-grade="all">Semua Grade</button>
+                        <button class="filter-chip" data-grade="4">Grade 4</button>
+                        <button class="filter-chip" data-grade="3">Grade 3</button>
+                        <button class="filter-chip" data-grade="2">Grade 2</button>
+                        <button class="filter-chip" data-grade="1">Grade 1</button>
+                        <button class="filter-chip" data-grade="0">Grade 0</button>
+                    </div>
+                </div>
+
+                <!-- Catalog Card List Container -->
+                <div class="admin-cards-list-box" id="adminCardsListBox">
+                    <!-- Cards populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Right Column: Card Editor Form & Live Inspector -->
+            <div class="admin-editor-col">
+                <div class="admin-form-card">
+                    <div class="admin-form-header">
+                        <div style="flex:1;">
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <h2 class="admin-form-title" id="adminFormTitle">Tambah Kartu Baru</h2>
+                                <button type="button" class="btn btn-red" id="btnAdminDeleteCardHeader" style="display:none;padding:5px 14px;font-size:12px;font-weight:700;">Hapus Kartu Ini</button>
+                            </div>
+                            <p class="admin-form-subtitle">Atur identitas, stats tempur, rules ability text, serta koding efek kartu.</p>
+                        </div>
+                        <div class="admin-card-art-preview-box" id="adminHeaderArtPreviewBox" title="Klik untuk pilih / ganti file gambar art">
+                            <img src="img/Card/dztd01_002.webp" id="adminFormPreviewArt" alt="Preview Art">
+                            <div class="upload-overlay">Ganti<br>Gambar</div>
+                            <span class="preview-tag" id="adminFormPreviewBadge">G3 Unit</span>
+                        </div>
+                    </div>
+
+                    <form id="adminCardEditForm" class="admin-card-form" onsubmit="return false;">
+                        <!-- Row 1: ID, Name, Nation, Type -->
+                        <div class="form-grid-4">
+                            <div class="form-group">
+                                <label>Card ID (Kode Unik)</label>
+                                <input type="text" id="adminInputId" class="admin-input" placeholder="contoh: dz_custom_001" required>
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>Nama Kartu</label>
+                                <input type="text" id="adminInputName" class="admin-input" placeholder="contoh: Blazing War Dragon, Varga" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nation</label>
+                                <select id="adminInputNation" class="admin-select">
+                                    <option value="Dragon Empire">Dragon Empire</option>
+                                    <option value="Keter Sanctuary">Keter Sanctuary</option>
+                                    <option value="Brandt Gate">Brandt Gate</option>
+                                    <option value="Dark States">Dark States</option>
+                                    <option value="Stoicheia">Stoicheia</option>
+                                    <option value="Lyrical Monasterio">Lyrical Monasterio</option>
+                                    <option value="Cray Elemental">Cray Elemental (Bisa Masuk Semua Deck)</option>
+                                    <option value="Elemental Cray">Elemental Cray</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Type, Grade, Power, Shield, Crit -->
+                        <div class="form-grid-5" style="margin-top:12px;">
+                            <div class="form-group">
+                                <label>Kategori Kartu</label>
+                                <select id="adminInputType" class="admin-select">
+                                    <option value="Normal Unit">Normal Unit</option>
+                                    <option value="Trigger Unit">Trigger Unit</option>
+                                    <option value="Normal Order">Normal Order</option>
+                                    <option value="Set Order">Set Order</option>
+                                    <option value="Blitz Order">Blitz Order</option>
+                                    <option value="Token">Token</option>
+                                    <option value="Crest">Crest</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Grade</label>
+                                <select id="adminInputGrade" class="admin-select">
+                                    <option value="4">Grade 4</option>
+                                    <option value="3" selected>Grade 3</option>
+                                    <option value="2">Grade 2</option>
+                                    <option value="1">Grade 1</option>
+                                    <option value="0">Grade 0</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Base Power</label>
+                                <input type="number" id="adminInputPower" class="admin-input" value="13000" step="1000">
+                            </div>
+                            <div class="form-group">
+                                <label>Shield</label>
+                                <input type="number" id="adminInputShield" class="admin-input" value="0" step="5000">
+                            </div>
+                            <div class="form-group">
+                                <label>Critical</label>
+                                <input type="number" id="adminInputCrit" class="admin-input" value="1" min="0" max="5">
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Trigger & Skills -->
+                        <div class="form-grid-2" style="margin-top:12px;">
+                            <div class="form-group">
+                                <label>Tipe Trigger</label>
+                                <select id="adminInputTrigger" class="admin-select">
+                                    <option value="NONE">NONE (Bukan Trigger)</option>
+                                    <option value="CRITICAL">CRITICAL (+10k Power & +1 Crit)</option>
+                                    <option value="DRAW">DRAW (+10k Power & Draw 1)</option>
+                                    <option value="FRONT">FRONT (+10k Power All Front)</option>
+                                    <option value="HEAL">HEAL (+10k Power & Heal 1)</option>
+                                    <option value="OVER">OVER TRIGGER (+100M Power & Extra)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Skills & Keywords</label>
+                                <div class="admin-skills-checkboxes">
+                                    <label class="skill-check-item"><input type="checkbox" id="adminSkillBoost" value="BOOST"> BOOST</label>
+                                    <label class="skill-check-item"><input type="checkbox" id="adminSkillIntercept" value="INTERCEPT"> INTERCEPT</label>
+                                    <label class="skill-check-item"><input type="checkbox" id="adminSkillTwinDrive" value="TWIN_DRIVE"> TWIN DRIVE</label>
+                                    <label class="skill-check-item"><input type="checkbox" id="adminSkillTripleDrive" value="TRIPLE_DRIVE"> TRIPLE DRIVE</label>
+                                    <label class="skill-check-item"><input type="checkbox" id="adminSkillSentinel" value="SENTINEL"> SENTINEL</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Image Upload Dropzone, Path & Preset Chips -->
+                        <div class="form-group" style="margin-top:14px;">
+                            <label style="font-size:13px;font-weight:700;color:#f8fafc;display:flex;align-items:center;gap:6px;">
+                                Unggah / Input Gambar Art Kartu
+                            </label>
+                            
+                            <!-- Dropzone & Upload Button -->
+                            <div class="admin-image-upload-card" id="adminImageDropzone">
+                                <input type="file" id="adminInputImageFile" accept="image/*" style="display:none;">
+                                <div class="admin-image-dropzone-content" id="adminDropzoneContent">
+                                    <div style="color:#38bdf8;display:flex;justify-content:center;margin-bottom:4px;">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                    </div>
+                                    <div style="font-size:13px;font-weight:700;color:#f1f5f9;">
+                                        Pilih / Unggah File Gambar Kartu
+                                    </div>
+                                    <div style="font-size:11px;color:#94a3b8;">
+                                        Klik tombol di bawah ini atau Drag & Drop file gambar ke sini (PNG, JPG, JPEG, WEBP otomatis dikonversi)
+                                    </div>
+                                    <button type="button" class="btn btn-emerald" id="btnAdminUploadFile" style="margin-top:4px;padding:8px 20px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+                                        Pilih File Gambar dari Komputer...
+                                    </button>
+                                </div>
+                                <div id="adminUploadProgress" style="display:none;font-size:11.5px;color:#10b981;margin-top:8px;font-weight:700;text-align:center;"></div>
+                            </div>
+
+                            <!-- Path input & Manual URL Option -->
+                            <div style="margin-top:10px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                    <small style="color:#94a3b8;font-size:11px;">Atau Masukkan Path / URL Gambar Lokal:</small>
+                                    <small style="color:#64748b;font-size:10.5px;">Bisa diedit manual atau pilih preset di bawah</small>
+                                </div>
+                                <div style="display:flex;gap:8px;align-items:center;">
+                                    <input type="text" id="adminInputImage" class="admin-input" placeholder="contoh: img/Card/dztd01_002.webp" value="img/Card/dztd01_002.webp" style="flex:1;">
+                                    <button type="button" class="btn" id="btnAdminTestImage">Preview</button>
+                                </div>
+                            </div>
+
+                            <!-- Preset Image Chips -->
+                            <div style="margin-top:8px;">
+                                <small style="color:#94a3b8;font-size:10.5px;">Pilihan Gambar Preset Cepat (img/Card/):</small>
+                                <div class="quick-img-picker" id="adminQuickImgPicker">
+                                    <!-- Quick chips for dztd01_001.webp to 017.webp -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Card Ability / Rules Text (Description) -->
+                        <div class="form-group" style="margin-top:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <label>Rules / Ability Text (Penjelasan Efek)</label>
+                                <small style="color:#38bdf8;font-size:11px;">Mendukung tag: [ACT], [AUTO], [CONT], [1/Turn], (VC), (RC), (GC)</small>
+                            </div>
+                            <textarea id="adminInputAbility" class="admin-textarea" rows="3" placeholder="contoh: [Auto](VC)[1/Turn]: At the end of the battle it attacked, [Cost: CB(1)], [Stand] this unit!"></textarea>
+                            <div class="ability-live-preview" id="adminAbilityLivePreview"></div>
+                        </div>
+
+                        <!-- Row 6: Custom Effect Script / Code Hook (User Coding Area) -->
+                        <div class="form-group" style="margin-top:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <label>Custom Effect Script / Handler Hook (Koding Efek Kartu)</label>
+                                <small style="color:#10b981;font-size:11px;">Koding logic efek kartu kustom kamu di sini</small>
+                            </div>
+                            <textarea id="adminInputEffectScript" class="admin-code-area" rows="4" placeholder="// Tuliskan script / catatan implementasi efek kartu di sini:&#10;// onAttack(engine, card) { ... }&#10;// onPlaced(engine, card) { ... }"></textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="admin-form-actions">
+                            <button type="button" class="btn btn-emerald" id="btnAdminSaveCard" style="padding:10px 24px;font-size:13px;font-weight:700;">Simpan Kartu</button>
+                            <button type="button" class="btn btn-cyan" id="btnAdminDuplicateCard">Duplikat sebagai Baru</button>
+                            <button type="button" class="btn" id="btnAdminResetForm">+ Form Baru</button>
+                            <button type="button" class="btn btn-red" id="btnAdminDeleteCard" style="display:none;margin-left:auto;padding:10px 20px;font-size:13px;font-weight:700;">Hapus Kartu Ini</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- MODALS                                                   -->
+    <!-- ======================================================== -->
+    <div id="deckSelectModal" class="overlay-modal" style="display:none;z-index:1005;"></div>
+    <div id="gameModal" class="overlay-modal" style="display:none;"></div>
+    <div id="triggerSplash" class="trigger-splash" style="display:none;"></div>
+
+    <!-- Scripts -->
+    <script src="cards.js?v=34"></script>
+    <script src="engine.js?v=34"></script>
+    <script src="network.js?v=34"></script>
+    <script src="ui.js?v=34"></script>
+</body>
+</html>
