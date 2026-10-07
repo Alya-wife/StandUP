@@ -166,69 +166,85 @@ class VanguardUI {
 
     bindEngineEvents() {
         this.engine.onUpdate((engine, eventType, payload) => {
-            if (this.autoPov) {
+            if (this.network && this.network.isOnline && this.network.isHost) {
+                this.network.sendAction('SYNC_STATE', {
+                    state: this.engine.getState(),
+                    eventType: eventType,
+                    payload: payload
+                });
+            }
+            this.handleEngineEvent(eventType, payload);
+        });
+    }
+
+    handleEngineEvent(eventType, payload = {}) {
+        if (this.autoPov) {
+            if (this.network && this.network.isOnline) {
+                this.viewPerspective = this.network.myPlayerId;
+            } else {
                 if (eventType === 'TURN_STARTED' && payload && payload.playerNum) {
                     this.viewPerspective = payload.playerNum;
                 } else if (eventType === 'ON_ATTACK_ABILITY_PROMPT') {
-                    // Attacking player needs to choose ability: keep POV on attacker!
                     this.viewPerspective = this.engine.activePlayer;
                 } else if (eventType === 'ATTACK_DECLARED') {
-                    // Defending player needs to guard: flip POV to defender!
                     this.viewPerspective = this.engine.getOpponentPlayer().id;
                 } else if (eventType === 'DRIVE_STEP_START' || eventType === 'BATTLE_CLOSED') {
-                    // Drive check or battle finish: flip POV back to active attacker!
                     this.viewPerspective = this.engine.activePlayer;
                 }
             }
+        }
 
-            this.renderAll();
+        this.renderAll();
 
-            if (eventType === 'INIT') {
-                this.showDiceRollModal();
-            } else if (eventType === 'MULLIGAN_START') {
-                this.showMulliganModal(1);
-            } else if (eventType === 'STAND_UP') {
-                this.showSplash("STAND UP, VANGUARD!", "gold");
-            } else if (eventType === 'RIDE_PROMPT') {
-                const p = this.engine.getActivePlayer();
-                const currentGrade = p.circles.vc ? p.circles.vc.card.grade : -1;
-                if (currentGrade < 3) {
-                    this.showRideDeckModal();
-                }
-                // When currentGrade >= 3: No popup! Cards simply glow in hand for player to click!
-            } else if (eventType === 'ON_ATTACK_ABILITY_PROMPT') {
-                this.showOnAttackAbilityModal(payload);
-            } else if (eventType === 'TRIUMPH_AUTO_RESOLVED') {
-                this.showFloatingBuffFX(payload.player.id, 'vc', '+5,000', 'power');
-                setTimeout(() => this.showFloatingBuffFX(payload.player.id, 'vc', '+1 CRIT', 'crit'), 350);
-            } else if (eventType === 'TRIUMPH_ACT_ACTIVATED') {
-                this.showFloatingBuffFX(payload.player.id, 'vc', '+10,000', 'power');
-            } else if (eventType === 'DRIVE_CHECK_REVEAL') {
-                this.showDriveCheckReveal(payload);
-            } else if (eventType === 'DAMAGE_CHECK_REVEAL') {
-                this.showDamageCheckReveal(payload);
-            } else if (eventType === 'CARD_DRAWN') {
-                this.animateCardDraw(payload.player.id, payload.card);
-            } else if (eventType === 'TRIGGER_RESOLVED') {
-                this.showSplash(`${payload.trigger} TRIGGER!`, "pink");
-            } else if (eventType === 'BATTLE_CLOSED' || eventType === 'END_PHASE') {
-                const hud = document.getElementById('inGameCardRevealHud');
-                if (hud) hud.style.display = 'none';
-                if (this.revealTimer) {
-                    clearTimeout(this.revealTimer);
-                    this.revealTimer = null;
-                }
-                const arrowSvg = document.getElementById('combatAttackArrowSvg');
-                if (arrowSvg) {
-                    arrowSvg.style.display = 'none';
-                    arrowSvg.innerHTML = '';
-                }
-            } else if (eventType === 'GAME_OVER') {
-                this.showGameOverModal(payload.winner, payload.reason);
-            } else if (eventType === 'LOG') {
-                this.renderLogs();
+        if (eventType === 'INIT') {
+            this.showDiceRollModal();
+        } else if (eventType === 'MULLIGAN_START') {
+            const pNum = (this.network && this.network.isOnline) ? this.network.myPlayerId : 1;
+            this.showMulliganModal(pNum);
+        } else if (eventType === 'STAND_UP') {
+            this.showSplash("STAND UP, VANGUARD!", "gold");
+        } else if (eventType === 'RIDE_PROMPT') {
+            const p = this.engine.getActivePlayer();
+            const currentGrade = p.circles.vc ? p.circles.vc.card.grade : -1;
+            const canShow = (!this.network || !this.network.isOnline) || (this.engine.activePlayer === this.network.myPlayerId);
+            if (currentGrade < 3 && canShow) {
+                this.showRideDeckModal();
             }
-        });
+        } else if (eventType === 'ON_ATTACK_ABILITY_PROMPT') {
+            const canShow = (!this.network || !this.network.isOnline) || (this.engine.activePlayer === this.network.myPlayerId);
+            if (canShow) {
+                this.showOnAttackAbilityModal(payload);
+            }
+        } else if (eventType === 'TRIUMPH_AUTO_RESOLVED') {
+            this.showFloatingBuffFX(payload.player.id, 'vc', '+5,000', 'power');
+            setTimeout(() => this.showFloatingBuffFX(payload.player.id, 'vc', '+1 CRIT', 'crit'), 350);
+        } else if (eventType === 'TRIUMPH_ACT_ACTIVATED') {
+            this.showFloatingBuffFX(payload.player.id, 'vc', '+10,000', 'power');
+        } else if (eventType === 'DRIVE_CHECK_REVEAL') {
+            this.showDriveCheckReveal(payload);
+        } else if (eventType === 'DAMAGE_CHECK_REVEAL') {
+            this.showDamageCheckReveal(payload);
+        } else if (eventType === 'CARD_DRAWN') {
+            this.animateCardDraw(payload.player.id, payload.card);
+        } else if (eventType === 'TRIGGER_RESOLVED') {
+            this.showSplash(`${payload.trigger} TRIGGER!`, "pink");
+        } else if (eventType === 'BATTLE_CLOSED' || eventType === 'END_PHASE') {
+            const hud = document.getElementById('inGameCardRevealHud');
+            if (hud) hud.style.display = 'none';
+            if (this.revealTimer) {
+                clearTimeout(this.revealTimer);
+                this.revealTimer = null;
+            }
+            const arrowSvg = document.getElementById('combatAttackArrowSvg');
+            if (arrowSvg) {
+                arrowSvg.style.display = 'none';
+                arrowSvg.innerHTML = '';
+            }
+        } else if (eventType === 'GAME_OVER') {
+            this.showGameOverModal(payload.winner, payload.reason);
+        } else if (eventType === 'LOG') {
+            this.renderLogs();
+        }
     }
 
     showTestRoomDeckSelectModal(isIngame = false) {
@@ -1239,7 +1255,9 @@ class VanguardUI {
             el.onclick = () => {
                 const dIdx = parseInt(el.getAttribute('data-deck-idx'), 10);
                 this.elModal.style.display = 'none';
-                this.engine.executeTriumphAct(player, dIdx, chosenDamageIndex);
+                if (!this.dispatchAction('TRIUMPH_ACT', { targetCardId: dIdx, chosenDamageIndex })) {
+                    this.engine.executeTriumphAct(player, dIdx, chosenDamageIndex);
+                }
                 this.renderAll();
             };
         });
@@ -1248,7 +1266,9 @@ class VanguardUI {
         if (btnNoSearch) {
             btnNoSearch.onclick = () => {
                 this.elModal.style.display = 'none';
-                this.engine.executeTriumphAct(player, null, chosenDamageIndex);
+                if (!this.dispatchAction('TRIUMPH_ACT', { targetCardId: null, chosenDamageIndex })) {
+                    this.engine.executeTriumphAct(player, null, chosenDamageIndex);
+                }
                 this.renderAll();
             };
         }
@@ -1295,14 +1315,18 @@ class VanguardUI {
                 this.showSplash("PILIH 1 REAR-GUARD LAWAN UNTUK DI-RETIRE!", "red");
                 this.renderAll();
             } else {
-                this.engine.activateTriumphAuto(null);
+                if (!this.dispatchAction('TRIUMPH_AUTO', { retireCircleKey: null })) {
+                    this.engine.activateTriumphAuto(null);
+                }
                 this.renderAll();
             }
         };
 
         document.getElementById('btnSkipTriumphAuto').onclick = () => {
             this.elModal.style.display = 'none';
-            this.engine.skipAttackAbility();
+            if (!this.dispatchAction('SKIP_ATTACK_ABILITY')) {
+                this.engine.skipAttackAbility();
+            }
             this.renderAll();
         };
     }
@@ -1420,9 +1444,15 @@ class VanguardUI {
     onHandCardClick(playerNum, handIndex) {
         if (this.engine.phase === 'GUARD_STEP') {
             if (playerNum === this.engine.getOpponentPlayer().id) {
-                this.engine.callGuardian(handIndex);
+                if (!this.dispatchAction('CALL_GUARDIAN', { handIndex })) {
+                    this.engine.callGuardian(handIndex);
+                }
             }
             return;
+        }
+
+        if (this.network && this.network.isOnline && this.engine.activePlayer !== this.network.myPlayerId) {
+            return; // Bukan giliran Anda dalam online match
         }
 
         if (playerNum !== this.engine.activePlayer) return;
@@ -1478,7 +1508,9 @@ class VanguardUI {
 
         document.getElementById('btnConfirmDoRide').onclick = () => {
             this.elModal.style.display = 'none';
-            this.engine.rideFromHand(handIndex);
+            if (!this.dispatchAction('RIDE_FROM_HAND', { handIndex })) {
+                this.engine.rideFromHand(handIndex);
+            }
         };
 
         document.getElementById('btnCancelDoRide').onclick = () => {
@@ -1487,13 +1519,25 @@ class VanguardUI {
     }
 
     onCircleClick(playerNum, circleKey) {
+        if (this.network && this.network.isOnline) {
+            const isGuardStep = (this.engine.phase === 'GUARD_STEP');
+            const defenderId = this.engine.getOpponentPlayer().id;
+            if (isGuardStep) {
+                if (this.network.myPlayerId !== defenderId) return;
+            } else {
+                if (this.network.myPlayerId !== this.engine.activePlayer) return;
+            }
+        }
+
         // Triumph Dragon AUTO: Retire target selection on opponent rear-guards
         if (this.retireTargetSelectionState && this.retireTargetSelectionState.active) {
             const opp = this.engine.getOpponentPlayer();
             if (playerNum === opp.id && circleKey.startsWith('rc_') && opp.circles[circleKey]) {
                 const targetRetireKey = circleKey;
                 this.retireTargetSelectionState = null;
-                this.engine.activateTriumphAuto(targetRetireKey);
+                if (!this.dispatchAction('TRIUMPH_AUTO', { retireCircleKey: targetRetireKey })) {
+                    this.engine.activateTriumphAuto(targetRetireKey);
+                }
                 this.renderAll();
                 return;
             } else {
@@ -1523,7 +1567,9 @@ class VanguardUI {
         if (this.engine.phase === 'MAIN_PHASE' && playerNum === active.id) {
             if (this.selectedHandIndex !== null) {
                 if (circleKey.startsWith('rc_')) {
-                    this.engine.callUnit(this.selectedHandIndex, circleKey);
+                    if (!this.dispatchAction('CALL_UNIT', { handIndex: this.selectedHandIndex, circleKey })) {
+                        this.engine.callUnit(this.selectedHandIndex, circleKey);
+                    }
                     this.selectedHandIndex = null;
                     this.selectedMoveSourceCircle = null;
                     this.renderAll();
@@ -1560,7 +1606,9 @@ class VanguardUI {
                     this.renderAll();
                 } else if (partnerMap[this.selectedMoveSourceCircle] === circleKey) {
                     // Execute Move or Swap!
-                    this.engine.moveOrSwapRearGuard(this.selectedMoveSourceCircle, circleKey);
+                    if (!this.dispatchAction('MOVE_UNIT', { fromKey: this.selectedMoveSourceCircle, toKey: circleKey })) {
+                        this.engine.moveOrSwapRearGuard(this.selectedMoveSourceCircle, circleKey);
+                    }
                     this.selectedMoveSourceCircle = null;
                     this.renderAll();
                 } else {
@@ -1630,7 +1678,9 @@ class VanguardUI {
                         const bst = this.selectedBoosterCircle;
                         this.selectedAttackerCircle = null;
                         this.selectedBoosterCircle = null;
-                        this.engine.declareAttack(atk, circleKey, bst);
+                        if (!this.dispatchAction('DECLARE_ATTACK', { attackerKey: atk, targetKey: circleKey, boosterKey: bst })) {
+                            this.engine.declareAttack(atk, circleKey, bst);
+                        }
                         this.renderAll();
                     }
                 }
@@ -1639,6 +1689,10 @@ class VanguardUI {
     }
 
     handleActionPhaseBtn() {
+        if (this.dispatchAction('PHASE_BUTTON')) {
+            return;
+        }
+
         if (this.engine.phase === 'RIDE_PHASE') {
             const activeP = this.engine.getActivePlayer();
             const currentGrade = activeP.circles.vc ? activeP.circles.vc.card.grade : -1;
@@ -1659,6 +1713,10 @@ class VanguardUI {
     }
 
     handleEndTurn() {
+        if (this.dispatchAction('END_TURN')) {
+            return;
+        }
+
         if (['MAIN_PHASE', 'BATTLE_START', 'RIDE_PHASE'].includes(this.engine.phase)) {
             this.engine.endTurn();
         }
@@ -1682,6 +1740,9 @@ class VanguardUI {
     }
 
     showDiceRollModal() {
+        const isOnline = (this.network && this.network.isOnline);
+        const isGuest = (isOnline && !this.network.isHost);
+
         this.elModal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-title">Penentuan Giliran (Roll Dice)</div>
@@ -1691,30 +1752,34 @@ class VanguardUI {
 
                 <div class="dice-arena">
                     <div class="dice-player-box">
-                        <span style="font-size:12px;font-weight:700;color:#f59e0b;">Player 1</span>
+                        <span style="font-size:12px;font-weight:700;color:#f59e0b;">Player 1 (Host)</span>
                         <div class="dice-cube p1" id="cubeP1">?</div>
                     </div>
                     <div style="font-size:24px;font-weight:900;color:#64748b;">VS</div>
                     <div class="dice-player-box">
-                        <span style="font-size:12px;font-weight:700;color:#0284c7;">Player 2</span>
+                        <span style="font-size:12px;font-weight:700;color:#0284c7;">Player 2 (Guest)</span>
                         <div class="dice-cube p2" id="cubeP2">?</div>
                     </div>
                 </div>
 
                 <div id="diceRollResultMsg" style="font-size:13px;font-weight:800;color:#38bdf8;margin-bottom:18px;">
-                    Klik tombol di bawah untuk melempar dadu!
+                    ${isGuest ? '<span class="inline-spinner"></span> Menunggu Host (Player 1) melempar dadu...' : 'Klik tombol di bawah untuk melempar dadu!'}
                 </div>
 
                 <div id="diceActionsContainer">
-                    <button class="btn btn-primary" id="btnDoRollDice" style="font-size:13px;padding:8px 22px;">Lempar Dadu</button>
+                    ${isGuest ? '' : '<button class="btn btn-primary" id="btnDoRollDice" style="font-size:13px;padding:8px 22px;">Lempar Dadu</button>'}
                 </div>
             </div>
         `;
         this.elModal.style.display = 'flex';
 
-        document.getElementById('btnDoRollDice').onclick = () => {
-            const btn = document.getElementById('btnDoRollDice');
-            btn.disabled = true;
+        if (isGuest) return;
+
+        const btnRoll = document.getElementById('btnDoRollDice');
+        if (!btnRoll) return;
+
+        btnRoll.onclick = () => {
+            btnRoll.disabled = true;
 
             let ticks = 0;
             const cube1 = document.getElementById('cubeP1');
@@ -1730,27 +1795,35 @@ class VanguardUI {
                     cube2.textContent = res.d2;
 
                     const winnerName = res.winner === 1 ? 'Player 1' : 'Player 2';
-                    document.getElementById('diceRollResultMsg').innerHTML = `
-                        <span style="color:#22c55e;">${winnerName} Menang Lemparan Dadu!</span>
-                    `;
+                    const resultMsg = document.getElementById('diceRollResultMsg');
+                    if (resultMsg) {
+                        resultMsg.innerHTML = `<span style="color:#22c55e;">${winnerName} Menang Lemparan Dadu!</span>`;
+                    }
 
-                    document.getElementById('diceActionsContainer').innerHTML = `
-                        <div style="display:flex;gap:14px;justify-content:center;">
-                            <button class="btn btn-primary" id="btnChooseFirst">Jalan Pertama (First)</button>
-                            <button class="btn btn-cyan" id="btnChooseSecond">Jalan Kedua (Second)</button>
-                        </div>
-                    `;
+                    const actionsCont = document.getElementById('diceActionsContainer');
+                    if (actionsCont) {
+                        if (isOnline && res.winner === 2) {
+                            actionsCont.innerHTML = `<div style="font-size:12.5px;color:#38bdf8;font-weight:700;"><span class="inline-spinner"></span> Menunggu Player 2 (Guest) memilih urutan giliran...</div>`;
+                        } else {
+                            actionsCont.innerHTML = `
+                                <div style="display:flex;gap:14px;justify-content:center;">
+                                    <button class="btn btn-primary" id="btnChooseFirst">Jalan Pertama (First)</button>
+                                    <button class="btn btn-cyan" id="btnChooseSecond">Jalan Kedua (Second)</button>
+                                </div>
+                            `;
 
-                    document.getElementById('btnChooseFirst').onclick = () => {
-                        this.elModal.style.display = 'none';
-                        this.engine.chooseTurnOrder(res.winner);
-                    };
+                            document.getElementById('btnChooseFirst').onclick = () => {
+                                this.elModal.style.display = 'none';
+                                this.engine.chooseTurnOrder(res.winner);
+                            };
 
-                    document.getElementById('btnChooseSecond').onclick = () => {
-                        this.elModal.style.display = 'none';
-                        const other = res.winner === 1 ? 2 : 1;
-                        this.engine.chooseTurnOrder(other);
-                    };
+                            document.getElementById('btnChooseSecond').onclick = () => {
+                                this.elModal.style.display = 'none';
+                                const other = res.winner === 1 ? 2 : 1;
+                                this.engine.chooseTurnOrder(other);
+                            };
+                        }
+                    }
                 }
             }, 70);
         };
@@ -2109,17 +2182,33 @@ class VanguardUI {
 
         document.getElementById('btnConfirmMulligan').onclick = () => {
             this.elModal.style.display = 'none';
-            this.engine.performMulligan(playerNum, this.selectedMulliganIndices);
-            if (playerNum === 1 && !this.engine.p2.mulliganDone) {
-                setTimeout(() => this.showMulliganModal(2), 400);
+            if (this.network && this.network.isOnline) {
+                if (this.network.isHost) {
+                    this.engine.performMulligan(1, this.selectedMulliganIndices);
+                } else {
+                    this.dispatchAction('MULLIGAN', { indices: this.selectedMulliganIndices });
+                }
+            } else {
+                this.engine.performMulligan(playerNum, this.selectedMulliganIndices);
+                if (playerNum === 1 && !this.engine.p2.mulliganDone) {
+                    setTimeout(() => this.showMulliganModal(2), 400);
+                }
             }
         };
 
         document.getElementById('btnKeepHand').onclick = () => {
             this.elModal.style.display = 'none';
-            this.engine.performMulligan(playerNum, []);
-            if (playerNum === 1 && !this.engine.p2.mulliganDone) {
-                setTimeout(() => this.showMulliganModal(2), 400);
+            if (this.network && this.network.isOnline) {
+                if (this.network.isHost) {
+                    this.engine.performMulligan(1, []);
+                } else {
+                    this.dispatchAction('MULLIGAN', { indices: [] });
+                }
+            } else {
+                this.engine.performMulligan(playerNum, []);
+                if (playerNum === 1 && !this.engine.p2.mulliganDone) {
+                    setTimeout(() => this.showMulliganModal(2), 400);
+                }
             }
         };
     }
@@ -2223,14 +2312,18 @@ class VanguardUI {
         btnRide.onclick = () => {
             if (selectedRideIdx !== null && selectedHandDiscardIdx !== null) {
                 this.elModal.style.display = 'none';
-                this.engine.rideFromRideDeck(selectedRideIdx, selectedHandDiscardIdx);
-                this.engine.proceedToMainPhase();
+                if (!this.dispatchAction('RIDE_FROM_RIDE_DECK', { rideDeckIndex: selectedRideIdx, discardHandIndex: selectedHandDiscardIdx })) {
+                    this.engine.rideFromRideDeck(selectedRideIdx, selectedHandDiscardIdx);
+                    this.engine.proceedToMainPhase();
+                }
             }
         };
 
         document.getElementById('btnSkipRide').onclick = () => {
             this.elModal.style.display = 'none';
-            this.engine.skipRide();
+            if (!this.dispatchAction('SKIP_RIDE')) {
+                this.engine.skipRide();
+            }
         };
     }
 
@@ -2287,52 +2380,114 @@ class VanguardUI {
 
     showCreateRoomModal() {
         this.elModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-title">Create Room (P2P Serverless)</div>
-                <p style="color:#94a3b8;font-size:12px;margin-bottom:16px;">Hosting online multiplayer tanpa database menggunakan WebRTC.</p>
-                <div style="margin:16px 0;">
-                    <div id="createRoomStatus" style="font-size:13px;color:#38bdf8;font-weight:700;">Generating Room ID...</div>
+            <div class="modal-content" style="max-width:440px;text-align:center;">
+                <div class="modal-title">Create Room (P2P Online)</div>
+                <p style="color:#94a3b8;font-size:12px;margin-bottom:16px;">
+                    Multiplayer online P2P WebRTC (bisa dimainkan jarak jauh via GitHub Pages tanpa backend database).
+                </p>
+                <div style="margin:20px 0;" id="createRoomStatus">
+                    <div style="font-size:13px;color:#38bdf8;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <span class="inline-spinner"></span> Menghubungkan ke Signaling Server...
+                    </div>
                 </div>
-                <button class="btn" onclick="document.getElementById('gameModal').style.display='none'">Cancel</button>
+                <button class="btn" onclick="document.getElementById('gameModal').style.display='none'">Batal</button>
             </div>
         `;
         this.elModal.style.display = 'flex';
 
-        this.network.createRoom((roomId) => {
-            document.getElementById('createRoomStatus').innerHTML = `
-                Room Ready! Bagikan Room ID ini ke lawan:<br><br>
-                <span style="background:rgba(255,255,255,0.1);padding:6px 14px;border-radius:6px;font-size:16px;color:#f59e0b;font-weight:900;user-select:all;border:1px dashed #f59e0b;">${roomId}</span>
-                <br><br><span style="font-size:11px;color:#94a3b8;">Menunggu Player 2 bergabung...</span>
-            `;
-        });
+        this.network.createRoom(
+            (roomId) => {
+                const el = document.getElementById('createRoomStatus');
+                if (!el) return;
+                el.innerHTML = `
+                    <div style="color:#f1f5f9;font-size:13px;font-weight:700;margin-bottom:8px;">Room Berhasil Dibuat!</div>
+                    <div style="font-size:12px;color:#94a3b8;margin-bottom:12px;">Bagikan Room ID ini kepada lawan:</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
+                        <input type="text" readonly id="generatedRoomIdInput" value="${roomId}" 
+                            style="background:rgba(255,255,255,0.08);border:1px solid #f59e0b;padding:8px 12px;border-radius:6px;font-size:16px;color:#f59e0b;font-weight:900;text-align:center;letter-spacing:1px;width:180px;">
+                        <button class="btn btn-primary" id="btnCopyRoomId" style="padding:8px 14px;font-size:12px;font-weight:700;">Salin ID</button>
+                    </div>
+                    <div id="copyNotice" style="display:none;font-size:11px;color:#10b981;font-weight:700;margin-bottom:8px;">Tersalin ke clipboard!</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#38bdf8;font-weight:600;">
+                        <span class="pulse-indicator"></span> Menunggu Player 2 masuk...
+                    </div>
+                `;
+                const btnCopy = document.getElementById('btnCopyRoomId');
+                if (btnCopy) {
+                    btnCopy.onclick = () => {
+                        const copyInput = document.getElementById('generatedRoomIdInput');
+                        if (copyInput) {
+                            copyInput.select();
+                            navigator.clipboard.writeText(copyInput.value).then(() => {
+                                const notice = document.getElementById('copyNotice');
+                                if (notice) {
+                                    notice.style.display = 'block';
+                                    setTimeout(() => { if (notice) notice.style.display = 'none'; }, 2000);
+                                }
+                            });
+                        }
+                    };
+                }
+            },
+            (errText) => {
+                const el = document.getElementById('createRoomStatus');
+                if (el) {
+                    el.innerHTML = `
+                        <div style="color:#ef4444;font-size:13px;font-weight:700;margin-bottom:8px;">Gagal Membuat Room</div>
+                        <div style="font-size:12px;color:#94a3b8;margin-bottom:12px;">${errText}</div>
+                        <button class="btn btn-primary" onclick="if(window.vgUI) window.vgUI.showCreateRoomModal()">Coba Lagi</button>
+                    `;
+                }
+            }
+        );
     }
 
     showEnterRoomModal() {
         this.elModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-title">Enter Room (Join Game)</div>
-                <p style="color:#94a3b8;font-size:12px;margin-bottom:16px;">Masukkan Room ID yang dibagikan oleh pembuat room:</p>
-                <div style="display:flex;gap:8px;max-width:360px;margin:0 auto 16px auto;">
-                    <input type="text" id="inputJoinRoomId" placeholder="Paste Room ID di sini" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);padding:8px 12px;border-radius:6px;color:#fff;font-size:13px;">
-                    <button class="btn btn-primary" id="btnConfirmJoin">Join</button>
+            <div class="modal-content" style="max-width:440px;text-align:center;">
+                <div class="modal-title">Enter Room (Gabung Match)</div>
+                <p style="color:#94a3b8;font-size:12px;margin-bottom:16px;">Masukkan Room ID yang dibagikan oleh Host (Player 1):</p>
+                <div style="display:flex;gap:8px;max-width:340px;margin:0 auto 16px auto;">
+                    <input type="text" id="inputJoinRoomId" placeholder="contoh: vg-abc123" 
+                        style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);padding:8px 12px;border-radius:6px;color:#fff;font-size:14px;font-weight:700;text-align:center;">
+                    <button class="btn btn-primary" id="btnConfirmJoin" style="padding:8px 18px;font-weight:700;">Join</button>
                 </div>
-                <div id="joinStatus" style="font-size:12px;color:#38bdf8;margin-bottom:12px;"></div>
-                <button class="btn" onclick="document.getElementById('gameModal').style.display='none'">Cancel</button>
+                <div id="joinStatus" style="font-size:12px;color:#38bdf8;margin-bottom:12px;min-height:18px;"></div>
+                <button class="btn" onclick="document.getElementById('gameModal').style.display='none'">Batal</button>
             </div>
         `;
         this.elModal.style.display = 'flex';
 
-        document.getElementById('btnConfirmJoin').onclick = () => {
-            const rid = document.getElementById('inputJoinRoomId').value.trim();
-            if (rid) {
-                document.getElementById('joinStatus').textContent = 'Connecting to Host...';
-                this.network.joinRoom(rid, () => {
-                    this.elModal.style.display = 'none';
-                    this.showView('viewGamePlay');
-                    this.startNewMatch();
-                });
-            }
-        };
+        const btnJoin = document.getElementById('btnConfirmJoin');
+        if (btnJoin) {
+            btnJoin.onclick = () => {
+                const rid = document.getElementById('inputJoinRoomId').value.trim();
+                if (!rid) {
+                    document.getElementById('joinStatus').innerHTML = '<span style="color:#ef4444;">Masukkan Room ID terlebih dahulu.</span>';
+                    return;
+                }
+                document.getElementById('joinStatus').innerHTML = `<span style="color:#38bdf8;"><span class="inline-spinner"></span> Menghubungkan ke Host (${rid})...</span>`;
+                btnJoin.disabled = true;
+
+                this.network.joinRoom(
+                    rid,
+                    () => {
+                        this.elModal.style.display = 'none';
+                        this.showView('viewGamePlay');
+                        this.viewPerspective = 2;
+                        const myDeckKey = this.selectedP2DeckKey || ((typeof getActiveDeckId === 'function') ? (getActiveDeckId() || 'bastion_sanctuary') : 'bastion_sanctuary');
+                        this.network.sendAction('PLAYER_HELLO', {
+                            deckKey: myDeckKey
+                        });
+                        this.engine.log(`Terhubung ke Room: ${rid}! Menunggu inisialisasi match dari Host...`, "highlight");
+                    },
+                    (errText) => {
+                        btnJoin.disabled = false;
+                        document.getElementById('joinStatus').innerHTML = `<span style="color:#ef4444;">Gagal join: ${errText}</span>`;
+                    }
+                );
+            };
+        }
     }
 
     // =========================================================
@@ -3236,14 +3391,148 @@ class VanguardUI {
     }
 
     onPeerConnected(peerId) {
-        this.elModal.style.display = 'none';
-        this.showView('viewGamePlay');
-        this.startNewMatch();
+        if (this.network && this.network.isHost) {
+            this.elModal.style.display = 'none';
+            this.showView('viewGamePlay');
+            this.viewPerspective = 1;
+            const hostDeckKey = this.selectedP1DeckKey || ((typeof getActiveDeckId === 'function') ? (getActiveDeckId() || 'varga_dragres') : 'varga_dragres');
+            const guestDeckKey = this.selectedP2DeckKey || 'bastion_sanctuary';
+            this.startNewMatch(hostDeckKey, guestDeckKey);
+            this.network.isOnline = true;
+            this.network.isHost = true;
+            this.network.myPlayerId = 1;
+
+            this.network.sendAction('MATCH_START', {
+                state: this.engine.getState(),
+                hostDeckKey: hostDeckKey,
+                guestDeckKey: guestDeckKey
+            });
+        }
     }
 
     onNetworkAction(data) {
+        if (!data || !data.actionType) return;
+
         if (data.actionType === 'CHAT') {
             this.addChatMessage(data.payload.sender, data.payload.text, data.payload.cls);
+            return;
+        }
+
+        if (data.actionType === 'PLAYER_HELLO') {
+            if (this.network && this.network.isHost) {
+                if (data.payload && data.payload.deckKey) {
+                    this.selectedP2DeckKey = data.payload.deckKey;
+                }
+                const hostDeckKey = this.selectedP1DeckKey || ((typeof getActiveDeckId === 'function') ? (getActiveDeckId() || 'varga_dragres') : 'varga_dragres');
+                const guestDeckKey = this.selectedP2DeckKey || 'bastion_sanctuary';
+                this.startNewMatch(hostDeckKey, guestDeckKey);
+                this.network.isOnline = true;
+                this.network.isHost = true;
+                this.network.myPlayerId = 1;
+                this.viewPerspective = 1;
+
+                this.network.sendAction('MATCH_START', {
+                    state: this.engine.getState(),
+                    hostDeckKey: hostDeckKey,
+                    guestDeckKey: guestDeckKey
+                });
+            }
+            return;
+        }
+
+        if (data.actionType === 'MATCH_START') {
+            this.elModal.style.display = 'none';
+            this.showView('viewGamePlay');
+            this.network.isOnline = true;
+            this.network.isHost = false;
+            this.network.myPlayerId = 2;
+            this.viewPerspective = 2;
+
+            this.engine.loadState(data.payload.state);
+            this.renderAll();
+            this.showDiceRollModal();
+            return;
+        }
+
+        if (data.actionType === 'SYNC_STATE') {
+            this.engine.loadState(data.payload.state);
+            this.handleEngineEvent(data.payload.eventType, data.payload.payload);
+            return;
+        }
+
+        if (data.actionType === 'CLIENT_ACTION') {
+            if (this.network && this.network.isHost) {
+                this.handleClientAction(data.payload);
+            }
+            return;
+        }
+    }
+
+    dispatchAction(actionName, payload = {}) {
+        if (this.network && this.network.isOnline && !this.network.isHost) {
+            this.network.sendAction('CLIENT_ACTION', { action: actionName, payload });
+            return true;
+        }
+        return false;
+    }
+
+    handleClientAction(clientPayload) {
+        if (!clientPayload || !this.engine) return;
+        const { action, payload } = clientPayload;
+
+        switch (action) {
+            case 'MULLIGAN':
+                this.engine.performMulligan(2, payload.indices || []);
+                break;
+            case 'CHOOSE_TURN_ORDER':
+                this.engine.chooseTurnOrder(payload.chosenPlayerNum);
+                break;
+            case 'PHASE_BUTTON':
+                this.handleActionPhaseBtn();
+                break;
+            case 'END_TURN':
+                this.handleEndTurn();
+                break;
+            case 'CALL_UNIT':
+                this.engine.callUnit(payload.handIndex, payload.circleKey);
+                break;
+            case 'MOVE_UNIT':
+                this.engine.moveOrSwapRearGuard(payload.fromKey, payload.toKey);
+                break;
+            case 'RIDE_FROM_HAND':
+                this.engine.rideFromHand(payload.handIndex);
+                break;
+            case 'RIDE_FROM_RIDE_DECK':
+                this.engine.rideFromRideDeck(payload.rideDeckIndex, payload.discardHandIndex);
+                this.engine.proceedToMainPhase();
+                break;
+            case 'SKIP_RIDE':
+                this.engine.skipRide();
+                break;
+            case 'DECLARE_ATTACK':
+                this.engine.declareAttack(payload.attackerKey, payload.targetKey, payload.boosterKey);
+                break;
+            case 'CALL_GUARDIAN':
+                this.engine.callGuardian(payload.handIndex);
+                break;
+            case 'FINISH_GUARD':
+                this.engine.finishGuardStep();
+                break;
+            case 'TRIUMPH_ACT':
+                this.engine.executeTriumphAct(this.engine.p2, payload.targetCardId);
+                break;
+            case 'TRIUMPH_AUTO':
+                this.engine.activateTriumphAuto(payload.retireCircleKey);
+                break;
+            case 'SKIP_ATTACK_ABILITY':
+                this.engine.skipAttackAbility();
+                break;
+            case 'SELECT_TRIGGER_POWER':
+                this.engine.applyTriggerPower(this.engine.p2, payload.circleKey, payload.amount || 10000);
+                break;
+            case 'SELECT_TRIGGER_CRIT':
+                this.engine.applyTriggerCritical(this.engine.p2, payload.circleKey, payload.amount || 1);
+                break;
         }
     }
 

@@ -43,6 +43,47 @@ class VanguardEngine {
         this.setupStartingGame();
     }
 
+    getState() {
+        return {
+            turn: this.turn,
+            firstPlayer: this.firstPlayer,
+            activePlayer: this.activePlayer,
+            phase: this.phase,
+            winner: this.winner,
+            diceResult: this.diceResult,
+            combat: this.combat ? JSON.parse(JSON.stringify(this.combat)) : null,
+            p1: JSON.parse(JSON.stringify(this.p1)),
+            p2: JSON.parse(JSON.stringify(this.p2)),
+            logs: this.logs ? [...this.logs] : []
+        };
+    }
+
+    loadState(state) {
+        if (!state) return;
+        this.turn = state.turn;
+        this.firstPlayer = state.firstPlayer;
+        this.activePlayer = state.activePlayer;
+        this.phase = state.phase;
+        this.winner = state.winner;
+        this.diceResult = state.diceResult;
+        this.combat = state.combat;
+        this.p1 = state.p1;
+        this.p2 = state.p2;
+        if (state.logs) this.logs = state.logs;
+
+        // Re-link combat unit references to actual player circles
+        if (this.combat) {
+            const atkP = this.getActivePlayer();
+            const defP = this.getOpponentPlayer();
+            if (this.combat.attackerCircleKey && atkP && atkP.circles) {
+                this.combat.attackerUnit = atkP.circles[this.combat.attackerCircleKey] || this.combat.attackerUnit;
+            }
+            if (this.combat.targetCircleKey && defP && defP.circles) {
+                this.combat.targetUnit = defP.circles[this.combat.targetCircleKey] || this.combat.targetUnit;
+            }
+        }
+    }
+
     createPlayerState(playerNum, deckKey) {
         const deckData = buildPlayableDeck(deckKey);
         return {

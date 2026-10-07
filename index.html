@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=45">
+    <link rel="stylesheet" href="style.css?v=46">
 </head>
 <body>
 
@@ -832,10 +832,16 @@
     <div id="gameModal" class="overlay-modal" style="display:none;"></div>
     <div id="triggerSplash" class="trigger-splash" style="display:none;"></div>
 
-    <!-- Scripts -->
-    <script src="cards.js?v=45"></script>
-    <script src="engine.js?v=45"></script>
-    <script src="network.js?v=45"></script>
-    <script src="ui.js?v=45"></script>
+    <!-- WebRTC PeerJS for Serverless Online Multiplayer -->
+    <script src="peerjs.min.js?v=46"></script>
+    <script>
+        if (typeof Peer === 'undefined') {
+            document.write('<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"><\/script>');
+        }
+    </script>
+    <script src="cards.js?v=46"></script>
+    <script src="engine.js?v=46"></script>
+    <script src="network.js?v=46"></script>
+    <script src="ui.js?v=46"></script>
 </body>
 </html>
